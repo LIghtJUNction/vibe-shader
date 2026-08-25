@@ -1,0 +1,18 @@
+# Python caches
+__pycache__/
+*.py[cod]
+.ruff_cache/
+
+# Local agent and editor state
+.memsearch/
+.DS_Store
+.idea/
+.vscode/
+
+# Validation failure artifacts
+VALIDATION_ERRORS.txt
+PROFILE_VALIDATION_ERRORS.txt
+
+# Release artifacts
+dist/
+*.zip

@@ -1,0 +1,6 @@
+#version 330 compatibility
+#define DIM_NETHER
+#define HAS_TEXTURE
+#define EMISSIVE_PASS
+#define FORWARD_TRANSLUCENT
+#include "/program/gbuffers_generic.vsh.glsl"
