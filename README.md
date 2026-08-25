@@ -15,7 +15,7 @@
 ## 安装
 
 1. 安装适合当前 Minecraft Java 版本的 Iris + Sodium。OptiFine 仅作为保留传统目录布局的次要兼容路径，当前未进行实际客户端验证。
-2. 从 [GitHub Releases](https://github.com/LIghtJUNction/vibe-shader/releases) 下载 `vibe-shader-vX.Y.Z.zip`，原样放入 `.minecraft/shaderpacks/`，不要解压。
+2. 从 [GitHub Releases](https://github.com/LIghtJUNction/vibe-shader/releases) 或 [CurseForge](https://www.curseforge.com/minecraft/shaders/vibe-shader) 下载 `vibe-shader-vX.Y.Z.zip`，原样放入 `.minecraft/shaderpacks/`，不要解压。
 3. 进入“视频设置 → Shader Packs”，选择 `vibe-shader`。
 4. 首次启动建议选择 `Medium`。确认稳定后再切换 `High` 或 `Cinematic`。
 
@@ -36,7 +36,7 @@
 
 ## 兼容范围与验证边界
 
-- 采用 GLSL 330 compatibility，面向现代 Minecraft Java / Iris 管线。
+- 采用 GLSL 330 compatibility，发布目标为 Minecraft Java 26.2 及更高版本 / Iris 管线。
 - 结构保留 OptiFine 的 `world0`、`world-1`、`world1` 目录约定。
 - 源码已进行离线 include 展开、预处理结构检查与桌面 OpenGL 编译/链接验证：默认配置 90 / 90 组程序通过，四档代表分支 64 / 64 组程序通过。
 - 当前环境无法启动完整 Minecraft 客户端，因此没有声称完成真实游戏内兼容测试。不同资源包、模组方块、驱动和 Iris 版本仍可能暴露需要修补的材质映射或管线差异。

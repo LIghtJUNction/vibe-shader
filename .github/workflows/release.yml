@@ -220,7 +220,7 @@ jobs:
             optifine
           environment: client
           game-versions: ${{ vars.MINECRAFT_VERSIONS }}
-          game-version-filter: none
+          game-version-filter: releases
           retry-attempts: 3
           retry-delay: 10000
           fail-mode: fail

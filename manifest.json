@@ -1,7 +1,7 @@
 {
   "name": "vibe-shader",
   "version": "0.1.1",
-  "target": "Minecraft Java Edition / Iris-first shaderpack; OptiFine legacy layout",
+  "target": "Minecraft Java Edition 26.2+ / Iris-first shaderpack; OptiFine legacy layout",
   "glsl": "330 compatibility",
   "dimensions": [
     "minecraft:overworld",
