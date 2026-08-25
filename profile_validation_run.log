@@ -62,5 +62,5 @@ PASS CINEMATIC:world1/gbuffers_water
 PASS CINEMATIC:world1/deferred
 PASS CINEMATIC:world1/composite
 PASS CINEMATIC:world1/final
-OpenGL: 4.6.0 NVIDIA 610.57.04
+OpenGL: 4.5 (Compatibility Profile) Mesa 25.0.7-2
 Validated 64 profile-specific linked programs; failures: 0

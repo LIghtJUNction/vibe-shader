@@ -1,8 +1,9 @@
 vibe-shader pack audit
-PASS pack.png: 256x256 RGBA
+PASS pack.png: 256x256 RGB
 PASS linked wrapper pairs: 90
 PASS Iris attribute collision guard: no ftransform()
-PASS localized options checked: 24
+PASS localized options checked: 29
 PASS material block groups: 19
-Files: 249
+PASS water path: metadata-only 4/7 targets
+Files: 234
 Failures: 0

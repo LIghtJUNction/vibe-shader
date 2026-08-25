@@ -1,11 +1,13 @@
 #include "/lib/buffers.glsl"
 #include "/lib/settings.glsl"
 #include "/lib/common.glsl"
+#include "/lib/vibe.glsl"
 
 uniform sampler2D colortex0;
 uniform sampler2D colortex3;
 uniform sampler2D depthtex0;
 uniform mat4 gbufferProjection;
+uniform mat4 gbufferModelViewInverse;
 uniform vec3 sunPosition;
 uniform vec3 moonPosition;
 uniform float viewWidth;
@@ -121,22 +123,8 @@ vec3 lensArtifacts(vec2 uv) {
 #endif
 }
 
-vec3 gradeColor(vec3 color) {
-#if COLOR_GRADE == 0
-    return color;
-#elif COLOR_GRADE == 1
-    float y = luminance(color);
-    vec3 shadows = vec3(-0.018, 0.010, 0.026) * (1.0 - smoothstep(0.05, 0.55, y));
-    vec3 highlights = vec3(0.035, 0.010, -0.016) * smoothstep(0.45, 2.0, y);
-    color += shadows + highlights;
-    color = mix(vec3(y), color, 1.08);
-    return color;
-#else
-    float y = luminance(color);
-    color = mix(vec3(y), color, 1.22);
-    color *= vec3(1.04, 1.00, 1.08);
-    return color;
-#endif
+vec3 gradeColor(vec3 color, float sunHeight) {
+    return applyVibePostGrade(color, sunHeight, rainStrength);
 }
 
 void main() {
@@ -144,13 +132,13 @@ void main() {
     vec2 centered = uv - 0.5;
 
     // Subpixel spectral split only affects bright contrast boundaries.
-    vec2 chromaOffset = centered * 0.0016 * dot(centered, centered);
+    vec2 chromaOffset = centered * 0.00115 * dot(centered, centered);
     vec3 scene = fxaaResolve(uv);
     float highlight = smoothstep(0.9, 2.5, luminance(scene));
     vec3 splitScene = scene;
     splitScene.r = sampleScene(uv + chromaOffset).r;
     splitScene.b = sampleScene(uv - chromaOffset).b;
-    scene = mix(scene, splitScene, highlight * 0.60);
+    scene = mix(scene, splitScene, highlight * 0.42);
 
     scene += multiScaleBloom(uv);
     scene += lensArtifacts(uv);
@@ -165,10 +153,13 @@ void main() {
     if (isEyeInWater == 1) scene *= vec3(0.78, 1.03, 1.08);
     if (isEyeInWater == 2) scene *= vec3(1.34, 0.58, 0.31);
 
-    scene = gradeColor(max(scene * TONEMAP_EXPOSURE, vec3(0.0)));
+    vec3 sunDirWorld = normalize(mat3(gbufferModelViewInverse) *
+                                 sunPosition);
+    scene = gradeColor(max(scene * TONEMAP_EXPOSURE, vec3(0.0)),
+                       sunDirWorld.y);
     scene = acesTonemap(scene);
 
-    float vignette = 1.0 - dot(centered, centered) * 0.54;
+    float vignette = 1.0 - dot(centered, centered) * 0.42;
     vignette *= 1.0 - pow(saturate(abs(centered.x) * 1.75), 4.0) * 0.10;
     scene *= saturate(vignette);
 

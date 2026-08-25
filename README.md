@@ -1,54 +1,95 @@
 # vibe-shader
 
-一个从零编写、以 Iris 为主要目标并保留 OptiFine 传统目录布局的 Minecraft Java Edition Shader Pack。目标是保留方块世界的识别度，同时提供高动态范围延迟光照、体积方块云、湿润反射、透明水体、发光矿物以及三个维度独立的天空表现。
+`vibe-shader` 是面向 Minecraft Java Edition、以 Iris 为主要目标的原创 Shader Pack。名字同时指画面的氛围感与 vibe coding：它不会把方块世界简单套上一层写实滤镜，而是用统一的天空、暮光、水体、体素边缘与“代码脉冲”构成可辨认的视觉语言。
 
-## 核心效果
+当前版本：**0.2.0**  
+发布目标：**Minecraft Java Edition 26.2+ / Iris**
 
-- Overworld：昼夜天空、日落散射、月相切口、星空、极光、体积方块云、太阳光柱、动态雨幕。
-- Water：顶点水波、法线细节、厚度吸收、色散折射、Fresnel、屏幕空间反射与水下焦散。
-- Materials：雨天湿润度、金属高光、矿石晶体脉冲、方块边缘强调、暖/冷发光方块。
-- Nether：程序化烟层、岩浆色能量脉络和漂浮火星。
-- End：程序化星云、奇点吸积环和双向能量喷流。
-- Post：TAA 历史重投影、FXAA、多尺度 Bloom、横向光迹、轻微色差、ACES 映射、胶片颗粒。
-- Quality：Low / Medium / High / Cinematic 四档，可单独调整关键效果。
+## 0.2.0：建立真正的 Vibe
+
+这一版重写了最影响观感和稳定性的几条渲染路径：
+
+- 新增 Natural、Golden Hour、Dreamwave、Night Drive 四种 Vibe Mode，默认使用 **Dreamwave**。
+- 新增世界空间体素边缘和沿方块网格传播的 **Code Pulse**，让建筑、悬崖、洞穴和低光区域形成统一的视觉节奏。
+- 水和玻璃改为先写入独立几何、颜色与类型缓冲，再由 Composite 统一计算折射、反射、厚度吸收、焦散和岸边泡沫，避免旧版透明颜色重复叠加。
+- High 默认关闭 TAA；即使手动开启，水、玻璃、云、天气和水下画面也进入 reactive path，降低方块状拖影。
+- 重写距离雾与低地薄雾，远景保留空气透视，白天不会被整屏青色覆盖。
+- 重写主世界天空、暮光色带、高空卷云、月光、星空、极光与体积云照明。
+- 后期调色跟随 Vibe Mode，在青蓝阴影、洋红暮光和暖金高光之间建立稳定层次，并降低旧版过强的色差和暗角。
 
 ## 安装
 
-1. 安装适合当前 Minecraft Java 版本的 Iris + Sodium。OptiFine 仅作为保留传统目录布局的次要兼容路径，当前未进行实际客户端验证。
-2. 从 [GitHub Releases](https://github.com/LIghtJUNction/vibe-shader/releases) 或 [CurseForge](https://www.curseforge.com/minecraft/shaders/vibe-shader) 下载 `vibe-shader-vX.Y.Z.zip`，原样放入 `.minecraft/shaderpacks/`，不要解压。
-3. 进入“视频设置 → Shader Packs”，选择 `vibe-shader`。
-4. 首次启动建议选择 `Medium`。确认稳定后再切换 `High` 或 `Cinematic`。
+1. 安装适合当前 Minecraft Java 版本的 Iris 与 Sodium。OptiFine 仅保留传统目录布局兼容路径，当前没有完成客户端实机验证。
+2. 从 [GitHub Releases](https://github.com/LIghtJUNction/vibe-shader/releases) 或 [CurseForge](https://www.curseforge.com/minecraft/shaders/vibe-shader) 下载 `vibe-shader-vX.Y.Z.zip`。
+3. 将 ZIP 原样放入 `.minecraft/shaderpacks/`，不要解压。
+4. 在“视频设置 → Shader Packs”中选择 `vibe-shader`。
+5. 首次建议使用 `Vibe (Recommended)` 档。
 
-## v0.1.1 兼容性修复
+XMCL 中可以选中实例，进入“资源管理 → 光影包”，直接拖入 ZIP。压缩包第一层应直接包含：
 
-- 移除了所有顶点程序中的 `ftransform()`。
-- 改用显式 `gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex`，避免 Iris 转换后同时激活 `iris_Position` 与兼容模式 `gl_Vertex`。
-- 该修复针对 `LINES: Attribute iris_Position ... gl_Vertex ... collided` 链接失败，也覆盖使用相同公共顶点程序的实体、手持物、粒子、天空、天气和全屏 Pass。
+```text
+shaders/
+pack.png
+LICENSE
+```
 
-## 性能建议
+## 推荐设置
 
-- 核显 / 8 GB 系统内存：Low，阴影 96，关闭 SSR。
-- 入门独显：Medium，1080p。
-- 中高端独显：High，1080p 或 1440p。
-- Cinematic 会使用 3072 阴影贴图、22 步云积分、26 步 SSR 与 13 步体积光，主要面向截图。
+### 日常游玩
 
-帧率过低时，优先降低：`Volumetric Cloud Quality` → `Screen-space Reflections` → `Shadow Distance` → `Shadow Quality`。
+```text
+Profile: Vibe (Recommended)
+Vibe Mode: Dreamwave
+TAA: Off
+FXAA: On
+Cloud Quality: High
+Water Quality: High
+SSR: 16 steps
+```
+
+### 截图
+
+```text
+Profile: Cinematic
+Vibe Mode: Dreamwave / Golden Hour
+TAA: 可开；移动镜头时仍建议关闭
+Cloud Quality: Extreme
+Water Quality: Cinematic
+SSR: 26 steps
+```
+
+### 性能不足
+
+优先降低：`Volumetric Cloud Quality` → `Screen-space Reflections` → `Shadow Distance` → `Shadow Quality`。体素边缘、Code Pulse 和 Vibe 调色本身开销较低。
+
+## Vibe Mode
+
+- **Natural**：克制的蓝天和暖光，接近 Vanilla+。
+- **Golden Hour**：更强的暖色阳光和低饱和阴影，适合建筑、村庄与截图。
+- **Dreamwave**：默认风格，青蓝阴影、洋红暮光、暖金高光。
+- **Night Drive**：深蓝夜景、橙红光源与更明显的代码脉冲。
+
+## 三个维度
+
+- **Overworld**：动态昼夜天空、暮光、体积云、雨天湿润反射、透明水体与 Code Pulse。
+- **Nether**：程序化烟层、岩浆能量脉络、热雾和漂浮火星。
+- **End**：星云、奇点吸积环、双向能量喷流与冷紫色体素氛围。
 
 ## 兼容范围与验证边界
 
-- 采用 GLSL 330 compatibility，发布目标为 Minecraft Java 26.2 及更高版本 / Iris 管线。
-- 结构保留 OptiFine 的 `world0`、`world-1`、`world1` 目录约定。
-- 源码已进行离线 include 展开、预处理结构检查与桌面 OpenGL 编译/链接验证：默认配置 90 / 90 组程序通过，四档代表分支 64 / 64 组程序通过。
-- 当前环境无法启动完整 Minecraft 客户端，因此没有声称完成真实游戏内兼容测试。不同资源包、模组方块、驱动和 Iris 版本仍可能暴露需要修补的材质映射或管线差异。
-- Distant Horizons 专用 `dh_*` pass 暂未实现；启用 DH 时远景不会获得本包的完整材质模型。
+- 使用 GLSL 330 compatibility，发布目标为 Minecraft Java Edition 26.2+ / Iris 管线。
+- 保留 OptiFine 的 `world0`、`world-1`、`world1` 目录布局。
+- 默认配置 90 / 90 组顶点—片元程序通过桌面 OpenGL 编译与链接。
+- Low、Medium、High、Cinematic 代表分支 64 / 64 组通过编译与链接。
+- 公共顶点程序中不存在 `ftransform()`，保留针对 Iris `iris_Position` / `gl_Vertex` attribute 冲突的防护。
+- 当前环境无法启动完整 Minecraft 客户端。离线编译不能替代 Iris、Sodium、显卡驱动、资源包与模组组合下的实际画面测试。
+- Distant Horizons 专用 `dh_*` pass 暂未实现，启用 DH 时远景不会获得完整材质模型。
 
-## 验证报告
-
-完整编译记录、测试范围与未覆盖边界见 `VALIDATION.md`。
+完整测试范围见 [`VALIDATION.md`](VALIDATION.md)，版本变化见 [`CHANGELOG.md`](CHANGELOG.md)。
 
 ## 自动发布
 
-GitHub Actions 中的 `Publish release` 工作流会验证 Shader Pack、生成 ZIP、创建 GitHub Release，并可上传到 CurseForge。手动运行时可选择不改版本，或自动递增 patch、minor、major；也可以输入指定版本。
+GitHub Actions 中的 `Publish release` 工作流会执行包结构审计、GLSL 编译、画质分支验证，随后生成 `vibe-shader-vX.Y.Z.zip`、SHA-256 校验文件和 GitHub Release，并可选上传到 CurseForge。
 
 CurseForge 发布使用以下仓库配置：
 
@@ -56,6 +97,17 @@ CurseForge 发布使用以下仓库配置：
 - Variable：`CURSEFORGE_PROJECT_ID`
 - Variable：`MINECRAFT_VERSIONS`，每行填写一个受支持的 Minecraft 版本
 
-## 开发
+## 项目结构
 
-所有实际实现位于 `shaders/lib/` 与 `shaders/program/`，维度目录中的 `.vsh/.fsh` 仅负责声明 GLSL 版本、维度宏与程序组合。`pack.png` 为选择界面图标。Shader Pack 使用 MIT License，可自由修改与发布衍生版本，但请保留许可证。
+```text
+shaders/lib/       通用数学、材质、天空、云、水、阴影与 Vibe 系统
+shaders/program/   G-buffer、Deferred、Composite、Final 程序
+shaders/world*/    维度宏与程序入口
+shaders/lang/      中英文设置名称
+shaders.properties 画质档、设置页面与混合策略
+tools/             静态审计、GLSL 编译和发布辅助脚本
+```
+
+## License
+
+MIT License。可修改和发布衍生版本，但需保留许可证与作者信息。

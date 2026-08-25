@@ -16,34 +16,38 @@ in vec3 vWorldPosition;
 in vec3 vWorldNormal;
 flat in float vMaterial;
 
-/* RENDERTARGETS: 0,4 */
-layout(location = 0) out vec4 outWaterColor;
-layout(location = 1) out vec4 outWaterData;
+/* RENDERTARGETS: 4,7 */
+layout(location = 0) out vec4 outSurfaceData;
+layout(location = 1) out vec4 outSurfaceTint;
+
+const bool colortex4Clear = true;
+const bool colortex7Clear = true;
 
 void main() {
     vec4 atlasSample = texture(gtexture, vTexcoord);
     vec4 texel = vec4(atlasSample.rgb * vColor.rgb * vColor.a,
-                       atlasSample.a);
+                       atlasSample.a * vColor.a);
     if (texel.a < max(alphaTestRef, 0.02)) discard;
 
     vec3 normal = normalize(vWorldNormal);
 #if WATER_QUALITY > 0
-    if (normal.y > 0.55) {
+    if (normal.y > 0.52 && materialEquals(vMaterial, MAT_WATER)) {
         vec3 waveNormal = waterNormalFromWorld(vWorldPosition.xz,
                                                 frameTimeCounter);
 #if WATER_QUALITY >= 2
         float rainMicro = rainStrength *
-            sin(vWorldPosition.x * 18.0 + frameTimeCounter * 12.0) *
-            sin(vWorldPosition.z * 21.0 - frameTimeCounter * 10.0);
-        waveNormal.xz += rainMicro * 0.025;
+            sin(vWorldPosition.x * 17.0 + frameTimeCounter * 11.0) *
+            sin(vWorldPosition.z * 19.0 - frameTimeCounter * 9.0);
+        waveNormal.xz += rainMicro * 0.020;
 #endif
 #if WATER_QUALITY >= 3
-        vec3 fineNormal = waterNormalFromWorld(vWorldPosition.xz * 2.31 + 7.4,
-                                                frameTimeCounter * 1.37);
-        waveNormal.xz += fineNormal.xz * 0.22;
+        vec3 fineNormal = waterNormalFromWorld(
+            vWorldPosition.xz * 2.43 + 11.7,
+            frameTimeCounter * 1.31);
+        waveNormal.xz += fineNormal.xz * 0.20;
 #endif
-        float normalBlend = WATER_QUALITY == 1 ? 0.55 :
-                            (WATER_QUALITY == 2 ? 0.82 : 0.90);
+        float normalBlend = WATER_QUALITY == 1 ? 0.46 :
+                            (WATER_QUALITY == 2 ? 0.72 : 0.84);
         normal = normalize(mix(normal, waveNormal, normalBlend));
     }
 #endif
@@ -58,29 +62,29 @@ void main() {
                          (isPortal ? 4.0 :
                          (isLava ? 5.0 : 2.0)));
 
-    vec3 placeholder = vec3(0.0);
-    float opacity = texel.a * 0.48;
+    vec3 tint = srgbToLinear(max(texel.rgb, vec3(0.0)));
+    float opacity = texel.a;
+
     if (isWater) {
-        placeholder = vec3(0.012, 0.055, 0.075);
-        opacity = 0.12;
+        tint = mix(vec3(0.004, 0.040, 0.052), tint, 0.16);
+        opacity = 1.0;
     } else if (isLava) {
-        float pulse = 0.82 + 0.18 * sin(frameTimeCounter * 2.1 +
-                                        vWorldPosition.x * 0.7 +
-                                        vWorldPosition.z * 0.6);
-        placeholder = vec3(3.8, 0.31, 0.012) * pulse;
-        opacity = 0.94;
+        float pulse = 0.84 + 0.16 * sin(frameTimeCounter * 2.0 +
+                                        vWorldPosition.x * 0.63 +
+                                        vWorldPosition.z * 0.57);
+        tint = vec3(4.4, 0.30, 0.010) * pulse;
+        opacity = 1.0;
     } else if (isPortal) {
-        placeholder = srgbToLinear(texel.rgb) * 2.8 +
-                      vec3(0.28, 0.01, 1.25);
-        opacity = 0.78;
+        tint = tint * 1.8 + vec3(0.20, 0.008, 1.20);
+        opacity = max(opacity, 0.76);
     } else if (isIce) {
-        placeholder = srgbToLinear(texel.rgb) * vec3(0.48, 0.78, 1.0);
-        opacity = 0.42;
+        tint = mix(tint, vec3(0.13, 0.42, 0.68), 0.42);
+        opacity = mix(0.34, 0.58, opacity);
     } else {
-        placeholder = srgbToLinear(texel.rgb) * 0.42;
+        opacity = clamp(opacity, 0.08, 0.72);
     }
 
-    outWaterColor = vec4(placeholder, opacity);
-    outWaterData = vec4(octEncode(normal), surfaceClass / 8.0,
-                        gl_FragCoord.z);
+    outSurfaceData = vec4(octEncode(normal), surfaceClass / 8.0,
+                          gl_FragCoord.z);
+    outSurfaceTint = vec4(tint, opacity);
 }
