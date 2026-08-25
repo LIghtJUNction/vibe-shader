@@ -15,7 +15,7 @@
 ## 安装
 
 1. 安装适合当前 Minecraft Java 版本的 Iris + Sodium。OptiFine 仅作为保留传统目录布局的次要兼容路径，当前未进行实际客户端验证。
-2. 将 `vibe-shader-v0.1.1.zip` 原样放入 `.minecraft/shaderpacks/`，不要解压。
+2. 从 [GitHub Releases](https://github.com/LIghtJUNction/vibe-shader/releases) 下载 `vibe-shader-vX.Y.Z.zip`，原样放入 `.minecraft/shaderpacks/`，不要解压。
 3. 进入“视频设置 → Shader Packs”，选择 `vibe-shader`。
 4. 首次启动建议选择 `Medium`。确认稳定后再切换 `High` 或 `Cinematic`。
 
@@ -45,6 +45,16 @@
 ## 验证报告
 
 完整编译记录、测试范围与未覆盖边界见 `VALIDATION.md`。
+
+## 自动发布
+
+GitHub Actions 中的 `Publish release` 工作流会验证 Shader Pack、生成 ZIP、创建 GitHub Release，并可上传到 CurseForge。手动运行时可选择不改版本，或自动递增 patch、minor、major；也可以输入指定版本。
+
+CurseForge 发布使用以下仓库配置：
+
+- Secret：`CURSEFORGE_TOKEN`
+- Variable：`CURSEFORGE_PROJECT_ID`
+- Variable：`MINECRAFT_VERSIONS`，每行填写一个受支持的 Minecraft 版本
 
 ## 开发
 
