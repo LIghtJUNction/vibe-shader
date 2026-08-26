@@ -21,7 +21,7 @@ vec3 wetSurfaceReflection(vec2 uv, vec3 scene,
     }
 
     float puddle = wetness * smoothstep(0.68, 0.96, normalWorld.y);
-    float roughness = mix(normalData.a, 0.055, puddle * 0.88);
+    float roughness = mix(normalData.a, 0.16, puddle * 0.72);
     if (roughness > 0.42) return scene;
 
     vec3 viewPosition =
@@ -43,7 +43,7 @@ vec3 wetSurfaceReflection(vec2 uv, vec3 scene,
     float fresnel = 0.025 + 0.975 *
         pow5(1.0 - saturate(dot(normalView,
                                normalize(-viewPosition))));
-    float amount = puddle * mix(0.07, 0.48, fresnel) *
+    float amount = puddle * mix(0.04, 0.27, fresnel) *
                    (1.0 - roughness);
     return mix(scene, reflection, saturate(amount));
 #endif
@@ -69,7 +69,7 @@ vec3 volumetricSunLight(vec3 rdWorld, float maxDistance,
     float accumulation = 0.0;
 
     float forwardPhase = pow(saturate(dot(rdWorld, lightDirection)),
-                             18.0) * 1.05 + 0.055;
+                             18.0) * 1.14 + 0.064;
 
     for (int i = 0; i < VOLUME_STEPS; ++i) {
         vec3 sampleWorld = cameraPosition + rdWorld * t;
@@ -77,7 +77,7 @@ vec3 volumetricSunLight(vec3 rdWorld, float maxDistance,
         float noise = valueNoise3(sampleWorld * 0.018 +
                                   vec3(frameTimeCounter * 0.01, 0.0, 0.0));
         float density = heightHaze * mix(0.42, 1.0, noise) *
-                        (0.00095 + rainStrength * 0.0018) *
+                        (0.00105 + rainStrength * 0.0020) *
                         ATMOSPHERE_DENSITY;
         float visibility = quickShadowAt(sampleWorld, cameraPosition,
                                          shadowModelView,

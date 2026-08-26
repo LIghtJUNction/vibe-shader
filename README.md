@@ -1,16 +1,38 @@
 # vibe-shader
 
-`vibe-shader` 是面向 Minecraft Java Edition、以 Iris 为主要目标的原创 Shader Pack。名字同时指画面的氛围感与 vibe coding：它不会把方块世界简单套上一层写实滤镜，而是用统一的天空、暮光、水体、体素边缘与“代码脉冲”构成可辨认的视觉语言。
+`vibe-shader` 是面向 Minecraft Java Edition、以 Iris 为主要目标的原创 Shader Pack。名字同时指画面的氛围感与 vibe coding：它不会把方块世界简单套上一层写实滤镜，而是用统一的天空、暮光、水体和各维度大气构成可辨认的视觉语言。
 
-当前版本：**0.2.0**  
+当前版本：**0.2.1**
+
 发布目标：**Minecraft Java Edition 26.2+ / Iris**
+
+## 0.2.1：运行时修复
+
+- 修复 Iris 1.11.2 下光影包及设置页无法打开的问题。
+- 移除体素描边及 Code Pulse，方块恢复自然材质边界。
+- 新增基于真实场景深度的远景失焦、轻微散光和低照度视觉噪声；HUD 与近处手持物保持清晰。
+- 新增晴天暖调、雨天阴沉、夜间视力衰减，以及低血量、饥饿和受伤时的动态视觉反馈。
+- 新增自然地形衔接：连续的世界空间材质变化和远景纹理过滤减弱方块之间的割裂感，且不恢复描边。
+- 加强空气透视、低地薄雾、晴雨色温与 Dreamwave 默认强度。
+- 将人眼模糊、散光、Bloom 与 SSAO 的主要采样数降低约 25%–50%，并改进 FXAA 的亚像素边缘覆盖。
+- 体积云改用双层快速噪声和单次粗略光照探针，High 档步数由 14 降至 12，避免每个步进重复执行两组四层 3D FBM。
+- High 档体积光积分由 9 步降至 6 步，同时小幅提高光柱密度，保持氛围强度。
+- 普通方块改为漫反射优先的磨砂响应：提高石土木植被粗糙度、压低非金属镜面和湿地反射，发光矿物默认关闭。
+- 石材、土壤/陶瓦、木材、砂岩和雪新增独立材质分类；High/Cinematic 使用贴图亮度导出的双采样微表面法线、凹陷遮蔽与粗糙度变化，Low 自动关闭以节省性能。
+- 新增边缘门控的方块圆润光照：只在真实法线/深度转折处混合相邻面的法线，平坦方块接缝不处理，不恢复彩色描边。
+- 抬高洞穴间接光与 AO 下限，方块光改为全光谱暖光；后期减少统一双色染色并做保亮度色彩分离，避免大片方块挤成同一种橙色或蓝色。
+- HDR 层次改用局部亮度对比与受控高光峰值，而不是泛白 Bloom；夜间月光高光增强，同时保留暗部纹理与材质色。
+- 水体取消顶点位移造成的三角折面，降低 SSR、折射、太阳闪点、焦散与岸边泡沫；深水保留厚度吸收，垂直瀑布按薄水膜处理并使用连续向下流动法线，避免乳白或蓝色实墙。
+- Bloom 只接收真正超过 1.05 HDR 亮度的光源，High 默认强度降至 `0.40`；太阳、水、玻璃及真实发光方块仍保留受控高光。
+- 修复极光使用经度 `atan` 导致的垂直方位角接缝，改用连续天空平面投影。
+- 情境氛围按环境分化：无光夜晚与低血量偏恐怖，夜间方块光源形成暖色庇护，晴天温暖，雨天阴冷。
+- 为独立缓冲混合增加兼容回退。
 
 ## 0.2.0：建立真正的 Vibe
 
 这一版重写了最影响观感和稳定性的几条渲染路径：
 
 - 新增 Natural、Golden Hour、Dreamwave、Night Drive 四种 Vibe Mode，默认使用 **Dreamwave**。
-- 新增世界空间体素边缘和沿方块网格传播的 **Code Pulse**，让建筑、悬崖、洞穴和低光区域形成统一的视觉节奏。
 - 水和玻璃改为先写入独立几何、颜色与类型缓冲，再由 Composite 统一计算折射、反射、厚度吸收、焦散和岸边泡沫，避免旧版透明颜色重复叠加。
 - High 默认关闭 TAA；即使手动开启，水、玻璃、云、天气和水下画面也进入 reactive path，降低方块状拖影。
 - 重写距离雾与低地薄雾，远景保留空气透视，白天不会被整屏青色覆盖。
@@ -44,7 +66,18 @@ TAA: Off
 FXAA: On
 Cloud Quality: High
 Water Quality: High
+Water Opacity: 0.58
+Water Clarity: 0.65
 SSR: 16 steps
+Distant Focus Loss: On
+Subtle Astigmatism: On
+Survival Vision Response: On
+Natural Terrain Cohesion: On
+Procedural Surface Relief: On
+Rounded Block Lighting: On
+Block Roundness: 0.40
+Bloom Strength: 0.40
+Emissive Ores: Off
 ```
 
 ### 截图
@@ -60,18 +93,28 @@ SSR: 26 steps
 
 ### 性能不足
 
-优先降低：`Volumetric Cloud Quality` → `Screen-space Reflections` → `Shadow Distance` → `Shadow Quality`。体素边缘、Code Pulse 和 Vibe 调色本身开销较低。
+优先降低：`Volumetric Cloud Quality` → `Screen-space Reflections` → `Procedural Surface Relief` → `Distant Focus Loss` → `Shadow Distance` → `Shadow Quality`。Vibe 调色本身开销较低。
+
+## 人眼视觉与生存反馈
+
+- 远景失焦使用四采样深度感知滤波与场景 mip，不会把近处方块轮廓、手持物或 HUD 一并抹糊。
+- 散光只拉伸高亮能量，白天非常轻微，夜间光源附近更明显；原有彩色镜头鬼影与胶片颗粒已移除。
+- 晴朗白天偏暖且最清晰；降雨会降低饱和度、色温与局部对比；无光夜晚会压低暖色和中间调，方块光源充足的夜间区域则转为明显的暖色庇护氛围。
+- 低血量触发去饱和、脉搏式周边视野收缩与模糊；低饥饿触发低幅度眩晕；`is_hurt`、失明和黑暗状态会加强眩晕与失焦。
+- Iris 1.11.2 没有单独暴露“中毒”状态 uniform，因此中毒通过其周期性受伤事件触发生理反馈；Shader Pack 无法在不安装配套模组的情况下把中毒与其他持续伤害完全区分。
+
+所有视觉反馈默认开启，可在 **Human Vision / 人眼视觉** 页面分别关闭或调低强度。地形衔接可在 **Lighting / 光照** 页面调整；它只做连续调色和远景纹理过滤，不改变方块几何或碰撞体。
 
 ## Vibe Mode
 
 - **Natural**：克制的蓝天和暖光，接近 Vanilla+。
 - **Golden Hour**：更强的暖色阳光和低饱和阴影，适合建筑、村庄与截图。
 - **Dreamwave**：默认风格，青蓝阴影、洋红暮光、暖金高光。
-- **Night Drive**：深蓝夜景、橙红光源与更明显的代码脉冲。
+- **Night Drive**：深蓝夜景、橙红光源与更鲜明的冷暖反差。
 
 ## 三个维度
 
-- **Overworld**：动态昼夜天空、暮光、体积云、雨天湿润反射、透明水体与 Code Pulse。
+- **Overworld**：动态昼夜天空、暮光、体积云、雨天湿润反射与透明水体。
 - **Nether**：程序化烟层、岩浆能量脉络、热雾和漂浮火星。
 - **End**：星云、奇点吸积环、双向能量喷流与冷紫色体素氛围。
 
@@ -82,7 +125,7 @@ SSR: 26 steps
 - 默认配置 90 / 90 组顶点—片元程序通过桌面 OpenGL 编译与链接。
 - Low、Medium、High、Cinematic 代表分支 64 / 64 组通过编译与链接。
 - 公共顶点程序中不存在 `ftransform()`，保留针对 Iris `iris_Position` / `gl_Vertex` attribute 冲突的防护。
-- 当前环境无法启动完整 Minecraft 客户端。离线编译不能替代 Iris、Sodium、显卡驱动、资源包与模组组合下的实际画面测试。
+- 已在 Minecraft 26.2、Fabric、Iris 1.11.2 与 Sodium 的实际客户端中反复加载测试；离线编译仍不能覆盖其他显卡驱动、资源包与模组组合。
 - Distant Horizons 专用 `dh_*` pass 暂未实现，启用 DH 时远景不会获得完整材质模型。
 
 完整测试范围见 [`VALIDATION.md`](VALIDATION.md)，版本变化见 [`CHANGELOG.md`](CHANGELOG.md)。

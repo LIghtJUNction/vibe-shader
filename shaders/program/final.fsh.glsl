@@ -4,6 +4,7 @@
 #include "/lib/vibe.glsl"
 
 uniform sampler2D colortex0;
+uniform sampler2D colortex2;
 uniform sampler2D colortex3;
 uniform sampler2D depthtex0;
 uniform mat4 gbufferProjection;
@@ -15,17 +16,39 @@ uniform float viewHeight;
 uniform float frameTimeCounter;
 uniform float rainStrength;
 uniform float thunderStrength;
+uniform float near;
+uniform float far;
+uniform float currentPlayerHealth;
+uniform float currentPlayerHunger;
+uniform float nightVision;
+uniform float blindness;
+uniform float darknessFactor;
 uniform int frameCounter;
 uniform int isEyeInWater;
+uniform bool is_hurt;
+
+#include "/lib/vision.glsl"
 
 in vec2 vTexcoord;
 
+const bool colortex0MipmapEnabled = true;
 const bool colortex3MipmapEnabled = true;
 
 layout(location = 0) out vec4 outColor;
 
 vec3 sampleScene(vec2 uv) {
     return texture(colortex0, saturate(uv)).rgb;
+}
+
+vec3 applyPerceptualLocalContrast(vec3 color, vec2 uv) {
+    vec3 surround = textureLod(colortex0, uv, 3.0).rgb;
+    float centerLuma = luminance(color);
+    float surroundLuma = luminance(surround);
+    float stopDifference = clamp(
+        log2((centerLuma + 0.035) / (surroundLuma + 0.035)),
+        -0.72, 0.72);
+    float gain = exp2(stopDifference * 0.30);
+    return color * gain;
 }
 
 vec3 fxaaResolve(vec2 uv) {
@@ -63,31 +86,27 @@ vec3 fxaaResolve(vec2 uv) {
         sampleScene(uv + dir *  0.5)
     );
     float lumaB = luminance(rgbB);
-    return (lumaB < lumaMin || lumaB > lumaMax) ? rgbA : rgbB;
+    vec3 resolved = (lumaB < lumaMin || lumaB > lumaMax)
+        ? rgbA : rgbB;
+    float contrast = lumaMax - lumaMin;
+    float edgeConfidence = saturate(
+        contrast / max(lumaMax + 0.08, 0.12) * 1.65);
+    vec3 localAverage = (rgbM * 2.0 + rgbNW + rgbNE + rgbSW + rgbSE) /
+                        6.0;
+    resolved = mix(resolved, localAverage, edgeConfidence * 0.12);
+    return mix(rgbM, resolved, edgeConfidence);
 #endif
 }
 
-vec3 multiScaleBloom(vec2 uv) {
+vec3 multiScaleBloom(vec2 uv, float night) {
 #ifndef BLOOM_ENABLED
     return vec3(0.0);
 #else
-    vec2 px = 1.0 / vec2(viewWidth, viewHeight);
     vec3 bloom = vec3(0.0);
-    bloom += textureLod(colortex3, uv, 1.0).rgb * 0.30;
-    bloom += textureLod(colortex3, uv, 2.0).rgb * 0.24;
-    bloom += textureLod(colortex3, uv, 3.0).rgb * 0.19;
-    bloom += textureLod(colortex3, uv, 4.0).rgb * 0.15;
-    bloom += textureLod(colortex3, uv, 5.0).rgb * 0.10;
-
-    // Anamorphic streaks are deliberately sparse to preserve the block image.
-    vec3 streak = vec3(0.0);
-    for (int i = 1; i <= 5; ++i) {
-        float f = float(i);
-        vec2 d = vec2(px.x * f * f * 3.6, 0.0);
-        streak += textureLod(colortex3, saturate(uv + d), 2.0).rgb;
-        streak += textureLod(colortex3, saturate(uv - d), 2.0).rgb;
-    }
-    bloom += streak * 0.025;
+    bloom += textureLod(colortex3, uv, 1.0).rgb * 0.43;
+    bloom += textureLod(colortex3, uv, 3.0).rgb * 0.32;
+    bloom += textureLod(colortex3, uv, 5.0).rgb * 0.21;
+    bloom += ocularAstigmatism(uv, night);
     return bloom * BLOOM_STRENGTH;
 #endif
 }
@@ -98,7 +117,7 @@ vec2 lightScreenPosition(vec3 viewPosition) {
     return clip.xy / clip.w * 0.5 + 0.5;
 }
 
-vec3 lensArtifacts(vec2 uv) {
+vec3 ocularSunGlare(vec2 uv) {
 #if defined(DIM_NETHER) || defined(DIM_END)
     return vec3(0.0);
 #else
@@ -108,18 +127,11 @@ vec3 lensArtifacts(vec2 uv) {
 
     float sky = step(0.99998, texture(depthtex0, lightUv).r);
     vec2 axis = uv - lightUv;
-    float halo = exp(-dot(axis, axis) * 5.5);
-    vec2 ghostA = uv - (vec2(1.0) - lightUv) * 0.65 - lightUv * 0.35;
-    vec2 ghostB = uv - (vec2(0.5) + (vec2(0.5) - lightUv) * 0.72);
-    float g1 = exp(-dot(ghostA, ghostA) * 140.0);
-    float g2 = exp(-dot(ghostB, ghostB) * 85.0);
-    float cross = exp(-abs(axis.x) * 180.0) * exp(-abs(axis.y) * 8.0) +
-                  exp(-abs(axis.y) * 180.0) * exp(-abs(axis.x) * 8.0);
-    vec3 flare = vec3(1.0, 0.52, 0.18) * halo * 0.020;
-    flare += vec3(0.12, 0.52, 1.0) * g1 * 0.055;
-    flare += vec3(1.0, 0.10, 0.34) * g2 * 0.035;
-    flare += vec3(1.0, 0.70, 0.34) * cross * 0.020;
-    return flare * sky * (1.0 - rainStrength);
+    float halo = exp(-dot(axis, axis) * 15.0);
+    float veil = exp(-dot(axis, axis) * 3.2);
+    vec3 glare = vec3(1.0, 0.72, 0.43) *
+                 (halo * 0.015 + veil * 0.0035);
+    return glare * sky * (1.0 - rainStrength);
 #endif
 }
 
@@ -130,18 +142,17 @@ vec3 gradeColor(vec3 color, float sunHeight) {
 void main() {
     vec2 uv = vTexcoord;
     vec2 centered = uv - 0.5;
+    vec3 sunDirWorld = normalize(mat3(gbufferModelViewInverse) *
+                                 sunPosition);
+    float sunHeight = sunDirWorld.y;
+    vec4 eyeState = visionState(sunHeight);
+    vec2 opticalUv = applyVisionDizziness(uv, eyeState);
 
-    // Subpixel spectral split only affects bright contrast boundaries.
-    vec2 chromaOffset = centered * 0.00115 * dot(centered, centered);
-    vec3 scene = fxaaResolve(uv);
-    float highlight = smoothstep(0.9, 2.5, luminance(scene));
-    vec3 splitScene = scene;
-    splitScene.r = sampleScene(uv + chromaOffset).r;
-    splitScene.b = sampleScene(uv - chromaOffset).b;
-    scene = mix(scene, splitScene, highlight * 0.42);
-
-    scene += multiScaleBloom(uv);
-    scene += lensArtifacts(uv);
+    vec3 scene = fxaaResolve(opticalUv);
+    scene = applyDepthAwareVisionBlur(opticalUv, scene, eyeState);
+    scene = applyPerceptualLocalContrast(scene, opticalUv);
+    scene += multiScaleBloom(opticalUv, eyeState.w);
+    scene += ocularSunGlare(opticalUv);
 
 #ifdef DIM_NETHER
     scene *= vec3(1.12, 0.82, 0.74);
@@ -153,20 +164,26 @@ void main() {
     if (isEyeInWater == 1) scene *= vec3(0.78, 1.03, 1.08);
     if (isEyeInWater == 2) scene *= vec3(1.34, 0.58, 0.31);
 
-    vec3 sunDirWorld = normalize(mat3(gbufferModelViewInverse) *
-                                 sunPosition);
     scene = gradeColor(max(scene * TONEMAP_EXPOSURE, vec3(0.0)),
-                       sunDirWorld.y);
+                       sunHeight);
+    vec2 localLight = texture(colortex2, opticalUv).rg;
+    scene = applyAdaptiveVisionMood(scene, sunHeight, eyeState,
+                                    localLight);
     scene = acesTonemap(scene);
 
-    float vignette = 1.0 - dot(centered, centered) * 0.42;
-    vignette *= 1.0 - pow(saturate(abs(centered.x) * 1.75), 4.0) * 0.10;
+    float vignette = 1.0 - dot(centered, centered) * 0.16;
+    vignette *= 1.0 - pow(saturate(abs(centered.x) * 1.75), 4.0) * 0.035;
+    vignette *= physiologicalVignette(centered, eyeState);
     scene *= saturate(vignette);
 
-#ifdef FILMIC_GRAIN
-    float grain = hash12(gl_FragCoord.xy + float(frameCounter) * 19.19) - 0.5;
-    scene += grain * (0.010 + rainStrength * 0.006) *
-             (0.35 + 0.65 * (1.0 - luminance(scene)));
+#ifdef SURVIVAL_VISION
+    // Rod-dominated sight is noisy in darkness; daylight remains clean.
+    float neuralNoise = hash12(gl_FragCoord.xy +
+                               float(frameCounter) * 19.19) - 0.5;
+    float lowLightNoise = 0.0004 + eyeState.w * 0.0025 +
+                          rainStrength * 0.0007;
+    scene += neuralNoise * lowLightNoise *
+             (0.22 + 0.78 * (1.0 - luminance(scene)));
 #endif
 
     scene = linearToSrgb(saturate(scene));

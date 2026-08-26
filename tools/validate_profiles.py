@@ -33,16 +33,24 @@ PROFILES = {
             "SSR_QUALITY": "0",
             "VIBE_MODE": "2",
             "VIBE_INTENSITY": "0.75",
-            "ATMOSPHERE_DENSITY": "0.55",
-            "BLOOM_STRENGTH": "0.40",
-            "EDGE_STRENGTH": "0.26",
+            "ATMOSPHERE_DENSITY": "0.68",
+            "BLOOM_STRENGTH": "0.25",
+            "TERRAIN_COHESION_STRENGTH": "0.50",
+            "MATERIAL_DETAIL_STRENGTH": "0.30",
+            "VOXEL_ROUNDNESS": "0.20",
+            "VISION_FOCUS_DISTANCE": "80.0",
+            "DISTANT_BLUR_STRENGTH": "0.32",
+            "ASTIGMATISM_STRENGTH": "0.12",
+            "SURVIVAL_EFFECT_STRENGTH": "0.62",
         },
         "off": {
             "SSAO_ENABLED",
             "VOLUMETRIC_LIGHTING",
             "TAA_ENABLED",
             "AURORA_ENABLED",
-            "FILMIC_GRAIN",
+            "EMISSIVE_ORES",
+            "MATERIAL_DETAIL",
+            "ROUNDED_VOXEL_LIGHTING",
         },
         "on": {
             "FXAA_ENABLED",
@@ -50,9 +58,6 @@ PROFILES = {
             "RAIN_EFFECTS",
             "WAVING_FOLIAGE",
             "WAVING_WATER",
-            "EMISSIVE_ORES",
-            "BLOCK_EDGE_ACCENT",
-            "VIBE_PULSE",
         },
     },
     "MEDIUM": {
@@ -64,11 +69,17 @@ PROFILES = {
             "SSR_QUALITY": "1",
             "VIBE_MODE": "2",
             "VIBE_INTENSITY": "0.90",
-            "ATMOSPHERE_DENSITY": "0.62",
-            "BLOOM_STRENGTH": "0.62",
-            "EDGE_STRENGTH": "0.30",
+            "ATMOSPHERE_DENSITY": "0.68",
+            "BLOOM_STRENGTH": "0.40",
+            "TERRAIN_COHESION_STRENGTH": "0.65",
+            "MATERIAL_DETAIL_STRENGTH": "0.45",
+            "VOXEL_ROUNDNESS": "0.30",
+            "VISION_FOCUS_DISTANCE": "72.0",
+            "DISTANT_BLUR_STRENGTH": "0.42",
+            "ASTIGMATISM_STRENGTH": "0.17",
+            "SURVIVAL_EFFECT_STRENGTH": "0.68",
         },
-        "off": {"TAA_ENABLED", "FILMIC_GRAIN"},
+        "off": {"TAA_ENABLED", "EMISSIVE_ORES"},
         "on": {
             "SSAO_ENABLED",
             "VOLUMETRIC_LIGHTING",
@@ -78,9 +89,8 @@ PROFILES = {
             "RAIN_EFFECTS",
             "WAVING_FOLIAGE",
             "WAVING_WATER",
-            "EMISSIVE_ORES",
-            "BLOCK_EDGE_ACCENT",
-            "VIBE_PULSE",
+            "MATERIAL_DETAIL",
+            "ROUNDED_VOXEL_LIGHTING",
         },
     },
     "HIGH": {
@@ -91,12 +101,18 @@ PROFILES = {
             "WATER_QUALITY": "2",
             "SSR_QUALITY": "2",
             "VIBE_MODE": "2",
-            "VIBE_INTENSITY": "0.90",
-            "ATMOSPHERE_DENSITY": "0.68",
-            "BLOOM_STRENGTH": "0.78",
-            "EDGE_STRENGTH": "0.34",
+            "VIBE_INTENSITY": "1.10",
+            "ATMOSPHERE_DENSITY": "0.82",
+            "BLOOM_STRENGTH": "0.40",
+            "TERRAIN_COHESION_STRENGTH": "0.78",
+            "MATERIAL_DETAIL_STRENGTH": "0.70",
+            "VOXEL_ROUNDNESS": "0.40",
+            "VISION_FOCUS_DISTANCE": "64.0",
+            "DISTANT_BLUR_STRENGTH": "0.52",
+            "ASTIGMATISM_STRENGTH": "0.22",
+            "SURVIVAL_EFFECT_STRENGTH": "0.72",
         },
-        "off": {"TAA_ENABLED"},
+        "off": {"TAA_ENABLED", "EMISSIVE_ORES"},
         "on": {
             "SSAO_ENABLED",
             "VOLUMETRIC_LIGHTING",
@@ -106,10 +122,8 @@ PROFILES = {
             "RAIN_EFFECTS",
             "WAVING_FOLIAGE",
             "WAVING_WATER",
-            "EMISSIVE_ORES",
-            "BLOCK_EDGE_ACCENT",
-            "VIBE_PULSE",
-            "FILMIC_GRAIN",
+            "MATERIAL_DETAIL",
+            "ROUNDED_VOXEL_LIGHTING",
         },
         "feature_defines": {"IRIS_FEATURE_BLOCK_EMISSION_ATTRIBUTE"},
     },
@@ -121,13 +135,19 @@ PROFILES = {
             "WATER_QUALITY": "3",
             "SSR_QUALITY": "3",
             "VIBE_MODE": "2",
-            "VIBE_INTENSITY": "1.10",
-            "ATMOSPHERE_DENSITY": "0.72",
-            "BLOOM_STRENGTH": "1.00",
-            "EDGE_STRENGTH": "0.40",
+            "VIBE_INTENSITY": "1.30",
+            "ATMOSPHERE_DENSITY": "1.00",
+            "BLOOM_STRENGTH": "0.55",
+            "TERRAIN_COHESION_STRENGTH": "0.90",
+            "MATERIAL_DETAIL_STRENGTH": "0.85",
+            "VOXEL_ROUNDNESS": "0.55",
+            "VISION_FOCUS_DISTANCE": "56.0",
+            "DISTANT_BLUR_STRENGTH": "0.62",
+            "ASTIGMATISM_STRENGTH": "0.28",
+            "SURVIVAL_EFFECT_STRENGTH": "0.78",
             "MOTION_STABILITY": "0.62",
         },
-        "off": {"FXAA_ENABLED"},
+        "off": {"FXAA_ENABLED", "EMISSIVE_ORES"},
         "on": {
             "SSAO_ENABLED",
             "VOLUMETRIC_LIGHTING",
@@ -137,14 +157,22 @@ PROFILES = {
             "RAIN_EFFECTS",
             "WAVING_FOLIAGE",
             "WAVING_WATER",
-            "EMISSIVE_ORES",
-            "BLOCK_EDGE_ACCENT",
-            "VIBE_PULSE",
-            "FILMIC_GRAIN",
+            "MATERIAL_DETAIL",
+            "ROUNDED_VOXEL_LIGHTING",
         },
         "feature_defines": {"IRIS_FEATURE_BLOCK_EMISSION_ATTRIBUTE"},
     },
 }
+
+for profile in PROFILES.values():
+    profile["on"].update(
+        {
+            "DISTANT_BLUR",
+            "OCULAR_ASTIGMATISM",
+            "SURVIVAL_VISION",
+            "NATURAL_TERRAIN_COHESION",
+        }
+    )
 
 REPRESENTATIVE = {
     "world0": (
@@ -174,7 +202,47 @@ def apply_profile(source: str, profile: dict) -> str:
     return source
 
 
+def profile_contract_errors() -> list[str]:
+    properties = (SHADERS / "shaders.properties").read_text(encoding="utf-8")
+    errors: list[str] = []
+    for name, profile in PROFILES.items():
+        match = re.search(rf"(?m)^profile\.{name}\s*=\s*(.+)$", properties)
+        if match is None:
+            errors.append(f"missing profile.{name} in shaders.properties")
+            continue
+        tokens = match.group(1).split()
+        numbers = {
+            key: value
+            for token in tokens
+            if "=" in token
+            for key, value in (token.split("=", 1),)
+        }
+        enabled = {
+            token for token in tokens if "=" not in token and not token.startswith("!")
+        }
+        disabled = {token[1:] for token in tokens if token.startswith("!")}
+        for key, expected in profile["numbers"].items():
+            if numbers.get(key) != expected:
+                errors.append(
+                    f"profile.{name} {key}: expected {expected}, got {numbers.get(key)!r}"
+                )
+        for key in profile["on"]:
+            if key not in enabled:
+                errors.append(f"profile.{name} must enable {key}")
+        for key in profile["off"]:
+            if key not in disabled:
+                errors.append(f"profile.{name} must disable {key}")
+    return errors
+
+
 def main() -> int:
+    contract_errors = profile_contract_errors()
+    if contract_errors:
+        for error in contract_errors:
+            print(f"FAIL profile contract: {error}", file=sys.stderr)
+        return 1
+    print("PASS shaders.properties profile contract")
+
     validator = GLValidator()
     failures: list[str] = []
     total = 0

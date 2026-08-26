@@ -43,16 +43,16 @@ void main() {
                                            sunDirWorld, moonDirWorld);
 #else
         float normalizedDistance = distanceToCamera / max(far, 1.0);
-        float clearDensity = 0.48 + rainStrength * 1.38;
+        float clearDensity = 0.68 + rainStrength * 1.58;
         float distanceFog = 1.0 - exp(
-            -pow(normalizedDistance * 1.06, 2.35) *
+            -pow(normalizedDistance * 1.22, 1.92) *
              clearDensity * ATMOSPHERE_DENSITY);
-        float valley = exp(-max(worldPosition.y - 58.0, 0.0) / 46.0);
-        float lowMist = (1.0 - exp(-distanceToCamera * 0.0042)) *
-                        valley * (0.055 + rainStrength * 0.10) *
+        float valley = exp(-max(worldPosition.y - 58.0, 0.0) / 42.0);
+        float lowMist = (1.0 - exp(-distanceToCamera * 0.0052)) *
+                        valley * (0.085 + rainStrength * 0.15) *
                         ATMOSPHERE_DENSITY;
         float fogAmount = min(distanceFog + lowMist,
-                              mix(0.82, 0.96, rainStrength));
+                              mix(0.88, 0.97, rainStrength));
         vec3 fogColor = vibeFogColor(rdWorld, sunDirWorld,
                                      sunDirWorld.y, rainStrength);
 #endif

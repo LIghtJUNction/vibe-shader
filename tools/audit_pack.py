@@ -117,6 +117,25 @@ if re.search(r"\bftransform\s*\(", program_vertex_text):
     )
 notes.append("Iris attribute collision guard: no ftransform()")
 
+# Voxel outlines and their travelling pulse were intentionally removed after
+# runtime review. Keep the shader path and UI free of stale toggles.
+shader_config_text = "\n".join(
+    p.read_text(encoding="utf-8")
+    for p in SHADERS.rglob("*")
+    if p.is_file() and p.suffix in {".glsl", ".fsh", ".vsh", ".properties", ".lang"}
+)
+for token in (
+    "BLOCK_EDGE_ACCENT",
+    "EDGE_STRENGTH",
+    "VIBE_PULSE",
+    "PULSE_STRENGTH",
+    "blockEdgeMask",
+    "vibeSignal",
+):
+    if token in shader_config_text:
+        fail(f"removed voxel-outline path is still present: {token}")
+notes.append("voxel outlines and code pulse removed")
+
 # Check option localization coverage.
 settings = (SHADERS / "lib/settings.glsl").read_text(encoding="utf-8")
 macros = set(re.findall(r"^#define\s+([A-Z][A-Z0-9_]+)", settings, re.M))
@@ -133,6 +152,74 @@ for lang_name in ("en_us.lang", "zh_cn.lang"):
     if missing:
         fail(f"{lang_name} missing option labels: {missing}")
 notes.append(f"localized options checked: {len(ui_tokens)}")
+
+# Human-vision effects must remain depth based and driven by Iris's verified
+# player-status uniforms. Camera-style film grain is intentionally excluded.
+vision_text = (SHADERS / "lib/vision.glsl").read_text(encoding="utf-8")
+final_text = (SHADERS / "program/final.fsh.glsl").read_text(encoding="utf-8")
+for token in (
+    "applyDepthAwareVisionBlur",
+    "ocularAstigmatism",
+    "applyAdaptiveVisionMood",
+    "physiologicalVignette",
+):
+    if token not in vision_text:
+        fail(f"human-vision pipeline is missing: {token}")
+for uniform in (
+    "currentPlayerHealth",
+    "currentPlayerHunger",
+    "nightVision",
+    "blindness",
+    "darknessFactor",
+    "is_hurt",
+):
+    if uniform not in final_text:
+        fail(f"final pass is missing Iris player-status uniform: {uniform}")
+if "FILMIC_GRAIN" in shader_config_text:
+    fail("camera-style film grain must not replace physiological low-light noise")
+if (
+    "VISION_BLUR_KERNEL[4]" not in vision_text
+    or "for (int i = 0; i < 4; ++i)" not in vision_text
+):
+    fail("optimized human-vision blur must remain a four-tap kernel")
+terrain_text = (SHADERS / "program/gbuffers_terrain.fsh.glsl").read_text(
+    encoding="utf-8"
+)
+for token in (
+    "NATURAL_TERRAIN_COHESION",
+    "cohesiveTerrainColor",
+    "MATERIAL_DETAIL",
+    "detailedSurfaceNormal",
+    "textureGrad",
+):
+    if token not in terrain_text:
+        fail(f"natural terrain cohesion path is missing: {token}")
+cloud_text = (SHADERS / "lib/clouds.glsl").read_text(encoding="utf-8")
+for token in ("#define CLOUD_STEPS 12", "fastCloudFbm", "coarseCloudDensity"):
+    if token not in cloud_text:
+        fail(f"optimized volumetric-cloud path is missing: {token}")
+if "fbm3(" in cloud_text:
+    fail("volumetric cloud march must not call four-octave fbm3 per step")
+composite_text = (SHADERS / "program/composite/base.glsl").read_text(encoding="utf-8")
+if "#define VOLUME_STEPS 6" not in composite_text:
+    fail("High volumetric-light integration must remain at six steps")
+sky_text = (SHADERS / "lib/sky.glsl").read_text(encoding="utf-8")
+if "atan(" in sky_text:
+    fail("sky effects must not use discontinuous azimuth longitude")
+lighting_text = (SHADERS / "program/deferred/lighting.glsl").read_text(encoding="utf-8")
+composite_main = (SHADERS / "program/composite/main.glsl").read_text(encoding="utf-8")
+if "specularScale" not in lighting_text or "vec3(1.05)" not in composite_main:
+    fail("diffuse-first matte lighting or HDR-only bloom gate is missing")
+deferred_base = (SHADERS / "program/deferred/base.glsl").read_text(
+    encoding="utf-8"
+)
+if "roundedVoxelNormal" not in deferred_base or "VOXEL_ROUNDNESS" not in props:
+    fail("edge-gated rounded voxel lighting is missing")
+if "applyPerceptualLocalContrast" not in final_text:
+    fail("perceptual local contrast for HDR separation is missing")
+if re.search(r"(?m)^#define\s+EMISSIVE_ORES\b", settings):
+    fail("emissive ores must remain opt-in for natural matte materials")
+notes.append("seamless sky, matte materials, rounded lighting, and HDR separation present")
 
 # Check material block IDs do not collide.
 block_text = (SHADERS / "block.properties").read_text(encoding="utf-8")
@@ -151,6 +238,12 @@ if "outLayerComposite" not in water_program:
     fail("water program is missing the layered translucency output")
 if "const bool colortex3Clear = true;" not in water_program:
     fail("water layer accumulator must clear at frame start")
+clear_color = re.search(
+    r"const\s+vec4\s+colortex3ClearColor\s*=\s*vec4\s*\(([^)]*)\)",
+    water_program,
+)
+if clear_color is None or len(clear_color.group(1).split(",")) != 4:
+    fail("colortex3ClearColor must use four scalar components for Iris")
 if "flip.composite.colortex3 = true" not in props:
     fail("composite must flip colortex3 from accumulator to bloom output")
 layer_blend = (
@@ -159,9 +252,28 @@ layer_blend = (
 )
 if layer_blend not in props:
     fail("water layer accumulator must use straight-alpha compositing")
+if not re.search(
+    r"#ifdef\s+IRIS_FEATURE_PER_BUFFER_BLENDING[\s\S]*"
+    r"blend\.gbuffers_water\.colortex3[\s\S]*#else[\s\S]*"
+    r"blend\.gbuffers_water\s*=\s*off[\s\S]*#endif",
+    props,
+):
+    fail("per-buffer blend directives must have an Iris feature fallback")
 if "outWaterColor" in water_program or "RENDERTARGETS: 0,4" in water_program:
     fail("legacy double-blended water path is still present")
-notes.append("water path: nearest metadata 4/7 + layered accumulator 3")
+geometry_text = (SHADERS / "lib/geometry.glsl").read_text(encoding="utf-8")
+water_shading = (SHADERS / "program/composite/water.glsl").read_text(encoding="utf-8")
+if "worldPos.y += waterHeight" in geometry_text:
+    fail("water geometry displacement creates visible planar facets")
+for token in (
+    "absorptionScale",
+    "horizontalWater",
+    "min(thickness, 0.34)",
+    "clamp(tintData.a, 0.0, 1.0)",
+):
+    if token not in water_shading:
+        fail(f"natural water response is missing: {token}")
+notes.append("layered water uses flat geometry, absorption, and restrained SSR")
 
 for errname in ("VALIDATION_ERRORS.txt", "PROFILE_VALIDATION_ERRORS.txt"):
     if (ROOT / errname).exists():

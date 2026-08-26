@@ -81,9 +81,11 @@ void main() {
                             depthNorm, skyPixel, reactiveMask);
     scene = applyRainOverlay(scene);
 
-    float brightGate = smoothstep(0.72, 1.36, luminance(scene));
-    vec3 bright = max(scene - vec3(0.64), vec3(0.0)) * 0.72;
-    bright += scene * brightGate * 0.22;
+    // Bloom is reserved for genuinely HDR energy. Ordinary sunlit terrain
+    // remains diffuse and does not leak a luminous veil into its neighbors.
+    float brightGate = smoothstep(1.18, 2.35, luminance(scene));
+    vec3 bright = max(scene - vec3(1.05), vec3(0.0)) * 0.46;
+    bright += scene * brightGate * 0.075;
 
     outScene = vec4(max(scene, vec3(0.0)), 1.0);
     outBloom = vec4(max(bright, vec3(0.0)), 1.0);

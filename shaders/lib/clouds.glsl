@@ -8,32 +8,52 @@
 #if CLOUD_QUALITY == 0
     #define CLOUD_STEPS 0
 #elif CLOUD_QUALITY == 1
-    #define CLOUD_STEPS 8
+    #define CLOUD_STEPS 6
 #elif CLOUD_QUALITY == 2
-    #define CLOUD_STEPS 14
+    #define CLOUD_STEPS 12
 #else
-    #define CLOUD_STEPS 22
+    #define CLOUD_STEPS 18
 #endif
 
-float voxelCloudDensity(vec3 worldPos, float time, float rain) {
+float fastCloudFbm(vec3 p) {
+    return valueNoise3(p) * 0.68 +
+           valueNoise3(p * 2.07 + vec3(7.1, 3.8, 5.4)) * 0.32;
+}
+
+float cloudHeightShape(float worldY) {
     const float cloudBottom = 108.0;
     const float cloudTop = 176.0;
-    float h = saturate((worldPos.y - cloudBottom) /
+    float h = saturate((worldY - cloudBottom) /
                        (cloudTop - cloudBottom));
-    float heightShape = smoothstep(0.0, 0.11, h) *
-                        (1.0 - smoothstep(0.72, 1.0, h));
+    return smoothstep(0.0, 0.11, h) *
+           (1.0 - smoothstep(0.72, 1.0, h));
+}
+
+float coarseCloudDensity(vec3 worldPos, float time, float rain) {
+    vec3 wind = vec3(time * 0.72, 0.0, time * 0.24);
+    vec3 p = (worldPos + wind) * vec3(0.0088, 0.015, 0.0088);
+    float broad = valueNoise3(p * 0.82);
+    float detail = valueNoise3(p * 1.91 + vec3(4.7, 8.2, 2.9));
+    float shape = broad * 0.76 + detail * 0.24;
+    float coverage = CLOUD_COVERAGE - rain * 0.12;
+    return smoothstep(coverage - 0.025, coverage + 0.17, shape) *
+           cloudHeightShape(worldPos.y);
+}
+
+float voxelCloudDensity(vec3 worldPos, float time, float rain) {
+    float heightShape = cloudHeightShape(worldPos.y);
 
     vec3 wind = vec3(time * 0.72, 0.0, time * 0.24);
     vec3 p = (worldPos + wind) * vec3(0.0088, 0.015, 0.0088);
 
-    float broad = fbm3(p * 0.82);
+    float broad = fastCloudFbm(p * 0.82);
     float billow = 1.0 - abs(valueNoise3(p * 2.15) * 2.0 - 1.0);
     vec3 voxelP = floor(p * 38.0) / 38.0;
-    float voxelDetail = valueNoise3(voxelP * 5.0 + 9.4);
-    float erosion = fbm3(p * 3.6 + vec3(12.0, 4.0, 8.0));
+    float voxelDetail = hash13(floor(voxelP * 190.0) + 9.4);
+    float erosion = valueNoise3(p * 3.6 + vec3(12.0, 4.0, 8.0));
 
-    float shape = broad * 0.63 + billow * 0.22 +
-                  voxelDetail * 0.15 - erosion * 0.13;
+    float shape = broad * 0.64 + billow * 0.22 +
+                  voxelDetail * 0.12 - erosion * 0.10;
     float coverage = CLOUD_COVERAGE - rain * 0.12;
     float density = smoothstep(coverage, coverage + 0.13, shape);
 
@@ -92,12 +112,9 @@ vec4 renderVoxelClouds(vec3 cameraWorld, vec3 rdWorld,
         vec3 p = cameraWorld + rdWorld * t;
         float density = voxelCloudDensity(p, time, rain);
         if (density > 0.001) {
-            float sunProbeA = voxelCloudDensity(
-                p + sunDirWorld * 8.0, time, rain);
-            float sunProbeB = voxelCloudDensity(
-                p + sunDirWorld * 19.0, time, rain);
-            float selfShadow = exp(-(sunProbeA * 2.7 +
-                                     sunProbeB * 1.15));
+            float sunProbe = coarseCloudDensity(
+                p + sunDirWorld * 14.0, time, rain);
+            float selfShadow = exp(-sunProbe * 3.25);
             float h = saturate((p.y - cloudBottom) /
                                (cloudTop - cloudBottom));
             vec3 ambient = mix(ambientBottom, ambientTop,
@@ -131,9 +148,9 @@ float cloudShadowAt(vec3 worldPos, float time, float rain) {
 #else
     vec2 p = (worldPos.xz + vec2(time * 0.72,
                                  time * 0.24)) * 0.0088;
-    float broad = fbm2(p * 0.82);
-    float detail = valueNoise2(p * 4.2 + 8.0);
-    float cloud = broad * 0.78 + detail * 0.22;
+    float broad = valueNoise2(p * 0.82);
+    float detail = valueNoise2(p * 2.05 + 8.0);
+    float cloud = broad * 0.72 + detail * 0.28;
     float coverage = CLOUD_COVERAGE - rain * 0.12;
     float shadow = smoothstep(coverage - 0.02,
                               coverage + 0.11, cloud);

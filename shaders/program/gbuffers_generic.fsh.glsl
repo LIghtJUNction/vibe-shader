@@ -85,7 +85,7 @@ void main() {
     outAlbedo = vec4(srgbToLinear(texel.rgb), texel.a);
     outNormalRoughness =
         vec4(normalize(vWorldNormal) * 0.5 + 0.5,
-             emission > 0.5 ? 0.12 : 0.68);
+             emission > 0.5 ? 0.55 : 0.82);
     outLightMaterial =
         vec4(saturate(vLmcoord), emission,
              encodeMaterial(MAT_ENTITY));

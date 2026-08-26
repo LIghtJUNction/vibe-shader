@@ -72,11 +72,11 @@ layout(location = 2) out vec4 outHistory;
 #endif
 
 #if SHADOW_QUALITY <= 1
-    #define VOLUME_STEPS 6
+    #define VOLUME_STEPS 4
 #elif SHADOW_QUALITY == 2
-    #define VOLUME_STEPS 9
+    #define VOLUME_STEPS 6
 #else
-    #define VOLUME_STEPS 13
+    #define VOLUME_STEPS 9
 #endif
 
 vec3 dimensionWaterTint() {

@@ -111,23 +111,55 @@ vec3 materialEmissionColor(float materialId, vec3 albedo,
     return albedo * emissionMask * 1.5;
 }
 
-float blockEdgeMask(vec3 worldPosition, vec3 normal) {
-    vec3 cell = fract(worldPosition + normal * 0.004);
-    vec2 faceUv;
-    vec3 an = abs(normal);
-    if (an.x > an.y && an.x > an.z) {
-        faceUv = cell.yz;
-    } else if (an.y > an.z) {
-        faceUv = cell.xz;
-    } else {
-        faceUv = cell.xy;
+vec3 roundedVoxelNormal(vec2 uv, vec3 viewPosition,
+                        vec3 worldNormal, float materialId) {
+#ifndef ROUNDED_VOXEL_LIGHTING
+    return normalize(worldNormal);
+#else
+    vec3 centerNormal = normalize(worldNormal);
+    if (!isTerrainMaterial(materialId) ||
+        materialEquals(materialId, MAT_LEAVES) ||
+        materialEquals(materialId, MAT_PLANT) ||
+        materialEquals(materialId, MAT_GLASS) ||
+        materialEquals(materialId, MAT_WATER) ||
+        materialEquals(materialId, MAT_LAVA) ||
+        materialEquals(materialId, MAT_PORTAL)) return centerNormal;
+
+    // Only pay for neighboring taps where the normal buffer already reports
+    // a real geometric edge. Coplanar block boundaries remain untouched.
+    float edgeEstimate = length(fwidth(centerNormal));
+    if (edgeEstimate < 0.075) return centerNormal;
+
+    vec2 pixel = 1.25 / vec2(viewWidth, viewHeight);
+    const vec2 offsets[4] = vec2[](
+        vec2(1.0, 0.0), vec2(-1.0, 0.0),
+        vec2(0.0, 1.0), vec2(0.0, -1.0)
+    );
+    vec3 neighborSum = vec3(0.0);
+    float totalWeight = 0.0;
+    for (int i = 0; i < 4; ++i) {
+        vec2 tapUv = saturate(uv + offsets[i] * pixel);
+        float tapDepth = texture(depthtex1, tapUv).r;
+        if (tapDepth >= 0.999999) continue;
+        vec3 tapPosition = viewPositionFromDepth(
+            tapUv, tapDepth, gbufferProjectionInverse);
+        float positionDelta = length(tapPosition - viewPosition);
+        vec3 tapNormal = normalize(
+            texture(colortex1, tapUv).rgb * 2.0 - 1.0);
+        float normalDelta = 1.0 - saturate(dot(centerNormal, tapNormal));
+        float weight = (1.0 - smoothstep(0.05, 1.15, positionDelta)) *
+                       smoothstep(0.045, 0.72, normalDelta);
+        neighborSum += tapNormal * weight;
+        totalWeight += weight;
     }
-    vec2 edgeDistance = min(faceUv, 1.0 - faceUv);
-    float distanceToEdge = min(edgeDistance.x, edgeDistance.y);
-    float pixelWidth = max(fwidth(faceUv.x), fwidth(faceUv.y));
-    float inner = 0.014 + pixelWidth * 0.55;
-    float outer = 0.060 + pixelWidth * 1.35;
-    return 1.0 - smoothstep(inner, outer, distanceToEdge);
+    if (totalWeight < 0.001) return centerNormal;
+
+    vec3 bevelNormal = normalize(centerNormal +
+                                 neighborSum / totalWeight);
+    float bevel = saturate(totalWeight * 0.42) *
+                  VOXEL_ROUNDNESS;
+    return normalize(mix(centerNormal, bevelNormal, bevel));
+#endif
 }
 
 float screenSpaceAO(vec2 uv, vec3 viewPosition, vec3 viewNormal) {
@@ -138,20 +170,19 @@ float screenSpaceAO(vec2 uv, vec3 viewPosition, vec3 viewNormal) {
     float pixelRadius = mix(10.0, 3.0, depthScale);
     vec2 invResolution = 1.0 / vec2(viewWidth, viewHeight);
     float rotation = interleavedGradientNoise(gl_FragCoord.xy,
-                                               float(frameCounter)) * TAU;
+                                               0.0) * TAU;
     float occlusion = 0.0;
     float validSamples = 0.0;
 
-    const vec2 directions[8] = vec2[](
-        vec2(1.0, 0.0), vec2(0.7071, 0.7071),
-        vec2(0.0, 1.0), vec2(-0.7071, 0.7071),
-        vec2(-1.0, 0.0), vec2(-0.7071, -0.7071),
-        vec2(0.0, -1.0), vec2(0.7071, -0.7071)
+    const vec2 directions[6] = vec2[](
+        vec2(1.0, 0.0), vec2(0.5, 0.8660),
+        vec2(-0.5, 0.8660), vec2(-1.0, 0.0),
+        vec2(-0.5, -0.8660), vec2(0.5, -0.8660)
     );
 
     mat2 rot = rotate2(rotation);
-    for (int i = 0; i < 8; ++i) {
-        float ring = 0.45 + 0.55 * float((i & 1) + 1);
+    for (int i = 0; i < 6; ++i) {
+        float ring = 0.68 + 0.34 * float(i & 1);
         vec2 sampleUv = uv + rot * directions[i] *
                         pixelRadius * ring * invResolution;
         float sampleDepth = texture(depthtex1, sampleUv).r;
@@ -193,7 +224,7 @@ vec3 dimensionAmbient(vec3 normal, float skyLight) {
     vec3 up = vibeAmbientUp(sunDirWorld.y, rainStrength);
     float hemi = saturate(normal.y * 0.5 + 0.5);
     vec3 ambient = mix(down, up, hemi);
-    return ambient * mix(0.18, 1.0, skyLight);
+    return ambient * mix(0.34, 1.0, skyLight);
 #endif
 }
 

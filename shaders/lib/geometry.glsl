@@ -6,14 +6,14 @@
 #include "/lib/materials.glsl"
 
 float waterHeight(vec2 xz, float time) {
-    float a = sin(dot(xz, vec2(0.63, 0.29)) + time * 1.35);
-    float b = sin(dot(xz, vec2(-0.31, 0.71)) + time * 1.07 + 1.8);
-    float c = sin(length(xz * vec2(0.17, 0.13)) * 2.4 - time * 0.72);
-    return (a * 0.045 + b * 0.030 + c * 0.018);
+    float a = sin(dot(xz, vec2(0.91, 0.37)) + time * 1.22);
+    float b = sin(dot(xz, vec2(-0.47, 1.13)) + time * 0.96 + 1.8);
+    float c = sin(dot(xz, vec2(2.71, -1.83)) - time * 1.58 + 0.7);
+    return a * 0.016 + b * 0.010 + c * 0.004;
 }
 
 vec3 waterNormalFromWorld(vec2 xz, float time) {
-    const float e = 0.18;
+    const float e = 0.12;
     float hL = waterHeight(xz - vec2(e, 0.0), time);
     float hR = waterHeight(xz + vec2(e, 0.0), time);
     float hD = waterHeight(xz - vec2(0.0, e), time);
@@ -40,13 +40,8 @@ vec3 applyVoxelAnimation(vec3 worldPos, float blockId, vec2 atlasUv,
     }
 #endif
 
-#ifdef WAVING_WATER
-    if (abs(blockId - BID_WATER) < 0.5) {
-        worldPos.y += waterHeight(worldPos.xz, time) *
-                      smoothstep(0.08, 0.92, topWeight);
-    }
-#endif
-
+    // Water geometry stays flat. Moving normals provide ripples without
+    // turning the one-block mesh into visible planar facets.
     return worldPos;
 }
 

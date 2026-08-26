@@ -73,7 +73,7 @@ vec3 vibeSkyZenith(float sunHeight, float rain) {
     vec3 nightColor = vec3(0.002, 0.004, 0.024);
 #endif
     vec3 color = mix(nightColor, dayColor, day);
-    color += vibeAccentB() * twilight * 0.025;
+    color += vibeAccentB() * twilight * 0.034 * TWILIGHT_BOOST;
     return mix(color, vec3(0.115, 0.145, 0.185), rain * 0.82);
 }
 
@@ -94,7 +94,8 @@ vec3 vibeSkyHorizon(float sunHeight, float rain) {
     vec3 nightColor = vec3(0.012, 0.024, 0.072);
 #endif
     vec3 color = mix(nightColor, dayColor, day);
-    color += mix(vibeAccentA(), vibeAccentB(), 0.62) * twilight * 0.14;
+    color += mix(vibeAccentA(), vibeAccentB(), 0.62) * twilight *
+             0.19 * TWILIGHT_BOOST;
     return mix(color, vec3(0.19, 0.21, 0.23), rain * 0.80);
 }
 
@@ -113,7 +114,7 @@ vec3 vibeAmbientUp(float sunHeight, float rain) {
     vec3 moonlight = mix(vec3(0.035, 0.050, 0.105),
                          vibeAccentA() * 0.055, 0.45);
     vec3 ambient = mix(moonlight, daylight, day);
-    ambient += vibeAccentB() * twilight * 0.022;
+    ambient += vibeAccentB() * twilight * 0.030 * TWILIGHT_BOOST;
     return mix(ambient, vec3(0.15, 0.17, 0.19), rain * 0.62);
 }
 
@@ -143,32 +144,8 @@ vec3 vibeFogColor(vec3 rd, vec3 sunDir, float sunHeight, float rain) {
                    vibeSkyZenith(sunHeight, rain), pow(up, 0.52));
     float towardSun = pow(saturate(dot(rd, sunDir)), 10.0);
     fog += vibeSunColor(sunHeight, rain) * towardSun * horizon *
-           (0.10 + twilight * 0.35) * day;
+           (0.09 * day + twilight * 0.48 * TWILIGHT_BOOST);
     return fog;
-}
-
-float vibeSignal(vec3 worldPosition, float skyLight, float time) {
-#ifndef VIBE_PULSE
-    return 0.0;
-#else
-    vec3 cell = floor(worldPosition);
-    float seed = hash13(cell);
-    float a = fract((worldPosition.x + worldPosition.z) * 0.0145 -
-                    time * 0.032 + seed * 0.035);
-    float b = fract((worldPosition.x - worldPosition.z) * 0.0095 +
-                    worldPosition.y * 0.012 + time * 0.019 + seed * 0.05);
-    float bandA = exp(-sqr((a - 0.5) * 22.0));
-    float bandB = exp(-sqr((b - 0.5) * 31.0));
-    float caveBoost = mix(0.28, 1.0, 1.0 - skyLight);
-    return saturate((bandA + bandB * 0.52) * caveBoost * PULSE_STRENGTH);
-#endif
-}
-
-vec3 vibeSignalColor(vec3 worldPosition, float time) {
-    float blend = 0.5 + 0.5 * sin(dot(floor(worldPosition),
-                                      vec3(0.37, 0.23, 0.41)) +
-                                  time * 0.55);
-    return mix(vibeAccentA(), vibeAccentB(), blend);
 }
 
 vec3 applyVibePostGrade(vec3 color, float sunHeight, float rain) {
@@ -177,33 +154,37 @@ vec3 applyVibePostGrade(vec3 color, float sunHeight, float rain) {
     float y = luminance(color);
 
 #if VIBE_MODE == 0
-    vec3 shadowTint = vec3(-0.010, 0.004, 0.014);
-    vec3 highlightTint = vec3(0.020, 0.008, -0.010);
-    float saturation = 1.04;
-    float contrast = 1.04;
+    vec3 shadowTint = vec3(-0.005, 0.003, 0.008);
+    vec3 highlightTint = vec3(0.012, 0.006, -0.005);
+    float saturation = 1.08;
+    float contrast = 1.02;
 #elif VIBE_MODE == 1
-    vec3 shadowTint = vec3(-0.018, 0.012, 0.018);
-    vec3 highlightTint = vec3(0.045, 0.012, -0.020);
-    float saturation = 1.07;
-    float contrast = 1.07;
+    vec3 shadowTint = vec3(-0.008, 0.006, 0.010);
+    vec3 highlightTint = vec3(0.024, 0.010, -0.010);
+    float saturation = 1.12;
+    float contrast = 1.04;
 #elif VIBE_MODE == 2
-    vec3 shadowTint = vec3(-0.020, 0.010, 0.038);
-    vec3 highlightTint = vec3(0.038, 0.004, 0.010);
-    float saturation = 1.10;
-    float contrast = 1.08;
+    vec3 shadowTint = vec3(-0.010, 0.006, 0.020);
+    vec3 highlightTint = vec3(0.020, 0.004, 0.006);
+    float saturation = 1.16;
+    float contrast = 1.04;
 #else
-    vec3 shadowTint = vec3(-0.018, 0.012, 0.050);
-    vec3 highlightTint = vec3(0.055, 0.004, -0.026);
-    float saturation = 1.13;
-    float contrast = 1.10;
+    vec3 shadowTint = vec3(-0.010, 0.007, 0.028);
+    vec3 highlightTint = vec3(0.030, 0.004, -0.012);
+    float saturation = 1.15;
+    float contrast = 1.06;
 #endif
 
     float shadowWeight = 1.0 - smoothstep(0.04, 0.58, y);
     float highlightWeight = smoothstep(0.42, 2.4, y);
     color += shadowTint * shadowWeight * VIBE_INTENSITY;
     color += highlightTint * highlightWeight * VIBE_INTENSITY;
-    color += vibeAccentB() * twilight * highlightWeight * 0.014 *
-             VIBE_INTENSITY;
+    color += vibeAccentB() * twilight * highlightWeight * 0.016 *
+             VIBE_INTENSITY * TWILIGHT_BOOST;
+    float shadowLift = shadowWeight * 0.014 *
+                       mix(0.65, 1.0, VIBE_INTENSITY);
+    color += vec3(shadowLift * 0.92, shadowLift * 0.97,
+                  shadowLift * 1.06);
     color = mix(vec3(luminance(color)), color,
                 mix(1.0, saturation, VIBE_INTENSITY));
     color = (color - 0.18) * mix(1.0, contrast, VIBE_INTENSITY) + 0.18;

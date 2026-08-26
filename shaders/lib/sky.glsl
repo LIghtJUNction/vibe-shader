@@ -101,18 +101,22 @@ vec3 overworldSky(vec3 rd, vec3 sunDir, vec3 moonDir) {
 
 #ifdef AURORA_ENABLED
     float pole = smoothstep(0.03, 0.72, rd.y) * night;
-    vec2 auroraUv = vec2(atan(rd.z, rd.x) / TAU, rd.y);
-    float band = fbm2(vec2(auroraUv.x * 7.0 +
-                           frameTimeCounter * 0.011,
-                           auroraUv.y * 4.2));
+    // Continuous sky-plane projection: no atan longitude and therefore no
+    // azimuth branch-cut seam when the view crosses +/-pi.
+    vec2 auroraPlane = rd.xz / max(rd.y + 0.28, 0.34);
+    vec2 auroraWind = vec2(frameTimeCounter * 0.010,
+                           -frameTimeCounter * 0.0035);
+    float band = fbm2(auroraPlane * vec2(0.62, 0.48) +
+                      auroraWind);
     float curtain = pow(saturate(1.0 - abs(
-        auroraUv.y - 0.43 - (band - 0.5) * 0.19) * 8.5), 3.0);
-    float folds = 0.55 + 0.45 * sin(auroraUv.x * 31.0 +
+        rd.y - 0.43 - (band - 0.5) * 0.20) * 8.2), 3.0);
+    float foldPhase = dot(auroraPlane, vec2(7.3, 5.1));
+    float folds = 0.55 + 0.45 * sin(foldPhase +
                                    frameTimeCounter * 0.08 +
                                    band * 8.0);
+    float colorPhase = dot(auroraPlane, vec2(3.7, -2.9));
     vec3 auroraColor = mix(vibeAccentA(), vibeAccentB(),
-                           0.5 + 0.5 *
-                           sin(auroraUv.x * 17.0));
+                           0.5 + 0.5 * sin(colorPhase));
     sky += auroraColor * curtain * folds * pole *
            (0.26 + VIBE_INTENSITY * 0.20);
 #endif

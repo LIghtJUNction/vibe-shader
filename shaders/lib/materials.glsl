@@ -23,6 +23,11 @@ const float MAT_PORTAL        = 18.0;
 const float MAT_ENTITY        = 19.0;
 const float MAT_SCULK         = 20.0;
 const float MAT_NETHER        = 21.0;
+const float MAT_STONE         = 22.0;
+const float MAT_SOIL          = 23.0;
+const float MAT_WOOD          = 24.0;
+const float MAT_SAND          = 25.0;
+const float MAT_SNOW          = 26.0;
 
 // block.properties IDs used by mc_Entity.x.
 const float BID_LEAVES        = 1001.0;
@@ -44,6 +49,11 @@ const float BID_ICE           = 1016.0;
 const float BID_PORTAL        = 1017.0;
 const float BID_SCULK         = 1018.0;
 const float BID_NETHER        = 1019.0;
+const float BID_STONE         = 1020.0;
+const float BID_SOIL          = 1021.0;
+const float BID_WOOD          = 1022.0;
+const float BID_SAND          = 1023.0;
+const float BID_SNOW          = 1024.0;
 
 float materialFromBlockId(float id) {
     if (abs(id - BID_LEAVES)        < 0.5) return MAT_LEAVES;
@@ -65,6 +75,11 @@ float materialFromBlockId(float id) {
     if (abs(id - BID_PORTAL)        < 0.5) return MAT_PORTAL;
     if (abs(id - BID_SCULK)         < 0.5) return MAT_SCULK;
     if (abs(id - BID_NETHER)        < 0.5) return MAT_NETHER;
+    if (abs(id - BID_STONE)         < 0.5) return MAT_STONE;
+    if (abs(id - BID_SOIL)          < 0.5) return MAT_SOIL;
+    if (abs(id - BID_WOOD)          < 0.5) return MAT_WOOD;
+    if (abs(id - BID_SAND)          < 0.5) return MAT_SAND;
+    if (abs(id - BID_SNOW)          < 0.5) return MAT_SNOW;
     return MAT_DEFAULT;
 }
 
@@ -86,7 +101,7 @@ bool isOreMaterial(float materialId) {
 }
 
 bool isTerrainMaterial(float materialId) {
-    return materialId < MAT_ENTITY - 0.25;
+    return !materialEquals(materialId, MAT_ENTITY);
 }
 
 #endif

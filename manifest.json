@@ -1,6 +1,6 @@
 {
   "name": "vibe-shader",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "target": "Minecraft Java Edition 26.2+ / Iris-first shaderpack; OptiFine legacy layout",
   "glsl": "330 compatibility",
   "dimensions": [
@@ -10,7 +10,7 @@
   ],
   "license": "MIT",
   "author": "LIght JUNction",
-  "generated": "2026-08-26",
+  "generated": "2026-08-27",
   "identity": {
     "modes": [
       "Natural",
@@ -19,13 +19,13 @@
       "Night Drive"
     ],
     "default_mode": "Dreamwave",
-    "motif": "world-space voxel edges and travelling code pulse"
+    "motif": "adaptive human vision, atmospheric color, transparent water, and dimensional skies"
   },
   "validation": {
     "default_linked_programs": "90/90",
     "profile_variants": "64/64",
-    "runtime_tested_in_minecraft": false,
+    "runtime_tested_in_minecraft": true,
     "iris_attribute_collision_guard": "no ftransform() in vertex programs",
-    "translucency_path": "colortex4 metadata + colortex7 tint; composite-only shading"
+    "translucency_path": "colortex4 metadata + colortex7 tint + colortex3 layered accumulation; composite-only shading"
   }
 }
