@@ -88,5 +88,5 @@ PASS shaders/world1/gbuffers_textured
 PASS shaders/world1/gbuffers_textured_lit
 PASS shaders/world1/gbuffers_water
 PASS shaders/world1/gbuffers_weather
-OpenGL: 4.6.0 NVIDIA 610.57.04
+OpenGL: 4.5 (Compatibility Profile) Mesa 25.0.7-2
 Validated 90 linked programs; failures: 0
