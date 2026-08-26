@@ -64,8 +64,8 @@ vec3 shadeWaterOrGlass(vec2 uv, vec3 baseScene, vec4 surfaceData,
 #if WATER_QUALITY >= 2
     vec3 refracted = sampleChromaticRefraction(uv, refractionOffset);
 #else
-    vec3 refracted = texture(colortex5,
-                             saturate(uv + refractionOffset)).rgb;
+    vec3 refracted = sampleLayeredBackground(
+        uv + refractionOffset);
 #endif
 
     if (water) {
@@ -92,11 +92,12 @@ vec3 shadeWaterOrGlass(vec2 uv, vec3 baseScene, vec4 surfaceData,
         refracted += vec3(0.12, 0.30, 0.25) * caustic * 0.34;
 #endif
     } else {
-        vec3 glassTint = max(tintData.rgb, vec3(0.01));
-        float tintStrength = ice ? 0.28 : tintData.a * 0.22;
-        refracted = mix(refracted,
-                        refracted * (0.74 + glassTint * 0.52),
-                        tintStrength);
+        vec3 glassTint = clamp(tintData.rgb * 1.12,
+                               vec3(0.035), vec3(1.0));
+        float tintStrength = ice
+            ? 0.55
+            : clamp(0.24 + tintData.a * 0.92, 0.24, 0.90);
+        refracted *= mix(vec3(1.0), glassTint, tintStrength);
     }
 
     vec3 incidentView = normalize(surfaceView);
@@ -156,7 +157,7 @@ vec3 shadeWaterOrGlass(vec2 uv, vec3 baseScene, vec4 surfaceData,
     if (water) {
         result = mix(baseScene, result, WATER_OPACITY);
     } else {
-        float alpha = ice ? 0.48 : clamp(tintData.a, 0.12, 0.68);
+        float alpha = clamp(tintData.a, 0.12, 0.96);
         result = mix(baseScene, result, alpha);
     }
     return result;

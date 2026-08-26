@@ -16,16 +16,19 @@ in vec3 vWorldPosition;
 in vec3 vWorldNormal;
 flat in float vMaterial;
 
-/* RENDERTARGETS: 4,7 */
+/* RENDERTARGETS: 4,7,3 */
 layout(location = 0) out vec4 outSurfaceData;
 layout(location = 1) out vec4 outSurfaceTint;
+layout(location = 2) out vec4 outLayerComposite;
 
+const bool colortex3Clear = true;
+const vec4 colortex3ClearColor = vec4(0.0);
 const bool colortex4Clear = true;
 const bool colortex7Clear = true;
 
 void main() {
     vec4 atlasSample = texture(gtexture, vTexcoord);
-    vec4 texel = vec4(atlasSample.rgb * vColor.rgb * vColor.a,
+    vec4 texel = vec4(atlasSample.rgb * vColor.rgb,
                        atlasSample.a * vColor.a);
     if (texel.a < max(alphaTestRef, 0.02)) discard;
 
@@ -67,7 +70,7 @@ void main() {
 
     if (isWater) {
         tint = mix(vec3(0.004, 0.040, 0.052), tint, 0.16);
-        opacity = 1.0;
+        opacity = WATER_OPACITY;
     } else if (isLava) {
         float pulse = 0.84 + 0.16 * sin(frameTimeCounter * 2.0 +
                                         vWorldPosition.x * 0.63 +
@@ -81,10 +84,12 @@ void main() {
         tint = mix(tint, vec3(0.13, 0.42, 0.68), 0.42);
         opacity = mix(0.34, 0.58, opacity);
     } else {
-        opacity = clamp(opacity, 0.08, 0.72);
+        opacity = clamp(opacity, 0.12, 0.68);
     }
 
     outSurfaceData = vec4(octEncode(normal), surfaceClass / 8.0,
                           gl_FragCoord.z);
     outSurfaceTint = vec4(tint, opacity);
+    // colortex3 uses straight-alpha blending to retain every sorted layer.
+    outLayerComposite = vec4(tint, opacity);
 }

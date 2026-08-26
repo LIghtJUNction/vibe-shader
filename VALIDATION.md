@@ -12,6 +12,7 @@
 OpenGL：4.5 Compatibility Profile / Mesa 25.0.7-2
 ftransform() 扫描：0 处
 水体旧双重混合路径：0 处
+透明层累积路径：colortex3
 ```
 
 ## 覆盖内容
@@ -23,7 +24,7 @@ ftransform() 扫描：0 处
 - 检查设置项具有中英文标签。
 - 检查材质 ID 重复、必需目录、图标尺寸、项目名称与语义化版本号。
 - 检查公共顶点程序中不存在 `ftransform()`，避免 Iris `iris_Position` / `gl_Vertex` attribute 冲突回归。
-- 检查水体程序只写入 `colortex4` 和 `colortex7`，透明颜色由 Composite 单次着色。
+- 检查水体程序使用 `colortex4` 和 `colortex7` 保存最近表面，并通过 `colortex3` 的 straight-alpha 混合保存更远透明层；Composite 恢复背景后单次着色最近表面。
 - 检查 `pack.png` 为 256 × 256，并验证发布包根目录结构。
 
 ## 验证边界

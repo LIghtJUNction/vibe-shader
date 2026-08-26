@@ -1,6 +1,7 @@
 void main() {
     vec2 uv = vTexcoord;
     vec3 scene = texture(colortex0, uv).rgb;
+    vec4 accumulatedLayers = texture(colortex3, uv);
 
     float opaqueDepth = texture(depthtex1, uv).r;
     float fullDepth = texture(depthtex0, uv).r;
@@ -34,6 +35,8 @@ void main() {
     float reactiveMask = translucentPixel ? 1.0 : 0.0;
 
     if (translucentPixel) {
+        scene = resolveLayersBehindNearest(scene, tintData,
+                                           accumulatedLayers);
         scene = shadeWaterOrGlass(uv, scene, surfaceData, tintData,
                                   rdWorld, sunDirWorld,
                                   moonDirWorld);

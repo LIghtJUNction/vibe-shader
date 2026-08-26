@@ -15,6 +15,7 @@
 uniform sampler2D colortex0;
 uniform sampler2D colortex1;
 uniform sampler2D colortex2;
+uniform sampler2D colortex3;
 uniform sampler2D colortex4;
 uniform sampler2D colortex5;
 uniform sampler2D colortex6;
@@ -88,11 +89,38 @@ vec3 dimensionWaterTint() {
 #endif
 }
 
+// Translucent terrain is submitted back-to-front. Remove the final (nearest)
+// straight-alpha term to recover the already-composited layers behind it.
+vec3 resolveLayersBehindNearest(vec3 baseScene,
+                                vec4 nearestLayer,
+                                vec4 accumulatedLayers) {
+    float nearestAlpha = saturate(nearestLayer.a);
+    float remaining = 1.0 - nearestAlpha;
+    if (remaining <= 0.01) return baseScene;
+
+    float farAlpha = saturate(
+        (accumulatedLayers.a - nearestAlpha) / remaining);
+    vec3 farPremultiplied =
+        (accumulatedLayers.rgb - nearestLayer.rgb * nearestAlpha) /
+        remaining;
+    farPremultiplied = clamp(farPremultiplied,
+                             vec3(0.0), vec3(16.0));
+    return farPremultiplied + baseScene * (1.0 - farAlpha);
+}
+
+vec3 sampleLayeredBackground(vec2 uv) {
+    uv = saturate(uv);
+    return resolveLayersBehindNearest(
+        texture(colortex5, uv).rgb,
+        texture(colortex7, uv),
+        texture(colortex3, uv));
+}
+
 vec3 sampleChromaticRefraction(vec2 uv, vec2 offset) {
     vec3 c;
-    c.r = texture(colortex5, saturate(uv + offset * 1.04)).r;
-    c.g = texture(colortex5, saturate(uv + offset)).g;
-    c.b = texture(colortex5, saturate(uv + offset * 0.96)).b;
+    c.r = sampleLayeredBackground(uv + offset * 1.04).r;
+    c.g = sampleLayeredBackground(uv + offset).g;
+    c.b = sampleLayeredBackground(uv + offset * 0.96).b;
     return c;
 }
 

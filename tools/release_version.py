@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Resolve and optionally bump the release version stored in manifest.json."""
+
 from __future__ import annotations
 
 import argparse
@@ -15,7 +16,9 @@ def parse_version(value: str) -> tuple[int, int, int]:
     normalized = value.removeprefix("v")
     match = SEMVER_RE.fullmatch(normalized)
     if match is None:
-        raise ValueError(f"expected a stable semantic version like 1.2.3, got {value!r}")
+        raise ValueError(
+            f"expected a stable semantic version like 1.2.3, got {value!r}"
+        )
     major, minor, patch = match.groups()
     try:
         return int(major), int(minor), int(patch)

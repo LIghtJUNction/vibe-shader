@@ -32,11 +32,12 @@ vec3 starField(vec3 rd, float night) {
 
 float highCirrus(vec3 rd, float time) {
     if (rd.y <= 0.015) return 0.0;
-    vec2 sphereUv = vec2(atan(rd.z, rd.x) / TAU,
-                         asin(clamp(rd.y, -1.0, 1.0)) / PI);
+    // Project the upper sky onto a continuous plane. Unlike atan-based
+    // longitude, this has no fixed seam at the azimuth branch cut.
+    vec2 cloudUv = rd.xz / max(rd.y, 0.12);
     vec2 wind = vec2(time * 0.0017, -time * 0.00045);
-    float broad = fbm2(sphereUv * vec2(6.0, 17.0) + wind);
-    float streak = valueNoise2(sphereUv * vec2(18.0, 54.0) +
+    float broad = fbm2(cloudUv * 0.42 + wind);
+    float streak = valueNoise2(cloudUv * vec2(1.35, 0.55) +
                                wind * 4.0);
     float cloud = smoothstep(0.54, 0.73,
                              broad * 0.78 + streak * 0.22);
