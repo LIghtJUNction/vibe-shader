@@ -147,7 +147,11 @@ jobs:
           zip -q -9 -r "$asset" shaders pack.png LICENSE
           unzip -Z1 "$asset" | grep -Fxq "shaders/shaders.properties"
           unzip -Z1 "$asset" | grep -Fxq "pack.png"
-          sha256sum "$asset" > "$checksum"
+          (
+            cd dist
+            sha256sum "$(basename "$asset")" > "$(basename "$checksum")"
+            sha256sum --check "$(basename "$checksum")"
+          )
 
           previous_tag="$({
             git tag --merged "$RELEASE_COMMIT" --sort=-version:refname \
