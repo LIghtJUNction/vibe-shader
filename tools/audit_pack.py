@@ -4,14 +4,10 @@ from __future__ import annotations
 import json
 import re
 import sys
-from pathlib import Path
 
 from PIL import Image
 from release_version import SEMVER_RE
-
-ROOT = Path(__file__).resolve().parents[1]
-SHADERS = ROOT / "shaders"
-INCLUDE_RE = re.compile(r'^\s*#include\s+["<]([^">]+)[">]\s*$', re.M)
+from validate_glsl import PACK_ROOT as ROOT, SHADERS, resolve_includes
 
 errors: list[str] = []
 notes: list[str] = []
@@ -19,26 +15,6 @@ notes: list[str] = []
 
 def fail(msg: str) -> None:
     errors.append(msg)
-
-
-def resolve(path: Path, stack: tuple[Path, ...] = ()) -> None:
-    if path in stack:
-        fail(
-            "include cycle: "
-            + " -> ".join(str(p.relative_to(ROOT)) for p in (*stack, path))
-        )
-        return
-    try:
-        text = path.read_text(encoding="utf-8")
-    except Exception as exc:
-        fail(f"cannot read {path.relative_to(ROOT)}: {exc}")
-        return
-    for inc in INCLUDE_RE.findall(text):
-        target = SHADERS / inc.lstrip("/")
-        if not target.is_file():
-            fail(f"{path.relative_to(ROOT)} includes missing {inc}")
-        else:
-            resolve(target, (*stack, path))
 
 
 required = [
@@ -96,7 +72,10 @@ for dim in ("world0", "world-1", "world1"):
         all_shader_text += "\n" + text
         if not text.startswith("#version 330 compatibility\n"):
             fail(f"{p.relative_to(ROOT)} lacks first-line #version 330 compatibility")
-        resolve(p)
+        try:
+            resolve_includes(p)
+        except Exception as exc:
+            fail(str(exc))
 
 if wrapper_pairs != 90:
     fail(f"expected 90 wrapper pairs, got {wrapper_pairs}")
