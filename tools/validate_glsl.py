@@ -25,8 +25,8 @@ INCLUDE_RE = re.compile(r'^\s*#include\s+["<]([^">]+)[">]\s*$', re.M)
 def resolve_includes(path: Path, stack: tuple[Path, ...] = ()) -> str:
     path = path.resolve()
     if path in stack:
-        chain = " -> ".join(p.name for p in (*stack, path))
-        raise RuntimeError(f"Include cycle: {chain}")
+        chain = " -> ".join(str(p.relative_to(PACK_ROOT)) for p in (*stack, path))
+        raise RuntimeError(f"include cycle: {chain}")
     text = path.read_text(encoding="utf-8")
 
     def repl(match: re.Match[str]) -> str:
