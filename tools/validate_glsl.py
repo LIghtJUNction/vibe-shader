@@ -237,6 +237,11 @@ class GLValidator:
         self.gl.glGetProgramInfoLog(program, len(buf), byref(written), buf)
         return buf.value.decode("utf-8", "replace")
 
+    def delete_shaders(self, *shaders: int) -> None:
+        for shader in shaders:
+            if shader:
+                self.gl.glDeleteShader(shader)
+
     def compile(self, kind: int, source: str, label: str) -> int:
         shader = self.gl.glCreateShader(kind)
         encoded = source.encode("utf-8")
@@ -248,7 +253,7 @@ class GLValidator:
         self.gl.glGetShaderiv(shader, GL_COMPILE_STATUS, byref(ok))
         if not ok.value:
             log = self._shader_log(shader)
-            self.gl.glDeleteShader(shader)
+            self.delete_shaders(shader)
             raise RuntimeError(f"{label} compile failed:\n{log}")
         return shader
 
@@ -303,10 +308,7 @@ def main() -> int:
             print("FAIL", label, file=sys.stderr)
             print(exc, file=sys.stderr)
         finally:
-            if vs:
-                validator.gl.glDeleteShader(vs)
-            if fs:
-                validator.gl.glDeleteShader(fs)
+            validator.delete_shaders(vs, fs)
 
     print(f"OpenGL: {validator.version}")
     print(f"Validated {len(pairs)} linked programs; failures: {len(errors)}")

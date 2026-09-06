@@ -267,10 +267,7 @@ def main() -> int:
                     print("FAIL", label, file=sys.stderr)
                     print(exc, file=sys.stderr)
                 finally:
-                    if vs:
-                        validator.gl.glDeleteShader(vs)
-                    if fs:
-                        validator.gl.glDeleteShader(fs)
+                    validator.delete_shaders(vs, fs)
                 total += 1
     print(f"OpenGL: {validator.version}")
     print(
