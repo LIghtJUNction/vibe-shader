@@ -53,7 +53,7 @@ option.MOTION_STABILITY=TAA History Weight
 
 value.VIBE_MODE.0=Natural
 value.VIBE_MODE.1=Golden Hour
-value.VIBE_MODE.2=Dreamwave (Default)
+value.VIBE_MODE.2=Dreamwave
 value.VIBE_MODE.3=Night Drive
 value.SHADOW_QUALITY.0=Off
 value.SHADOW_QUALITY.1=Soft 4-tap
@@ -72,3 +72,17 @@ value.SSR_QUALITY.1=8 steps
 value.SSR_QUALITY.2=16 steps
 value.SSR_QUALITY.3=26 steps
 suffix.SHADOW_DISTANCE= blocks
+
+screen.PHENOMENA=Meridian / Celestial Art
+option.CELESTIAL_QUALITY=Celestial Detail
+option.CELESTIAL_STRENGTH=Celestial Intensity
+option.TIDAL_GLOW=Bioluminescent Tide
+option.PHENOMENA_SPEED=Phenomena Motion
+value.CELESTIAL_QUALITY.0=Off
+value.CELESTIAL_QUALITY.1=Silk
+value.CELESTIAL_QUALITY.2=Observatory
+option.PHENOMENA_SPEED.comment=Zero freezes new phenomena and tide patterns, not existing waves, clouds or daylight.
+option.CELESTIAL_QUALITY.comment=World-oriented silk meridians and an End observatory. No extra render targets.
+option.TIDAL_GLOW.comment=Sparse threads on nearby horizontal water at night; not an emissive ocean tint.
+
+value.VIBE_MODE.4=Meridian (Default)

@@ -1,3 +1,5 @@
+#include "/lib/tidal.glsl"
+
 vec3 shadeWaterOrGlass(vec2 uv, vec3 baseScene, vec4 surfaceData,
                        vec4 tintData, vec3 rdWorld,
                        vec3 sunDirWorld, vec3 moonDirWorld) {
@@ -168,6 +170,11 @@ vec3 shadeWaterOrGlass(vec2 uv, vec3 baseScene, vec4 surfaceData,
     vec3 result = mix(refracted, reflection,
                       saturate(fresnel + foam * 0.12));
     result += foamColor;
+    if (water) {
+        result += tidalRadiance(surfaceWorld, thickness, horizontalWater,
+                                 length(surfaceView), sunDirWorld.y,
+                                 frameTimeCounter);
+    }
 
     if (water) {
         result = mix(baseScene, result,

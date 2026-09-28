@@ -16,163 +16,70 @@ from validate_glsl import (
 
 
 def numeric_re(key: str) -> re.Pattern[str]:
-    return re.compile(rf"(?m)^#define\s+{re.escape(key)}\s+[^\n]+$")
+    return re.compile(rf"(?m)^#define[ \t]+{re.escape(key)}[ \t]+[^\n]+$")
 
 
 def boolean_re(key: str) -> re.Pattern[str]:
-    return re.compile(rf"(?m)^(?://)?#define\s+{re.escape(key)}(?:\s.*)?$")
+    return re.compile(rf"(?m)^(?://)?#define[ \t]+{re.escape(key)}(?:[ \t]+[^\n]*)?$")
 
 
-PROFILES = {
-    "LOW": {
-        "numbers": {
-            "SHADOW_QUALITY": "1",
-            "SHADOW_DISTANCE": "96.0",
-            "CLOUD_QUALITY": "1",
-            "WATER_QUALITY": "1",
-            "SSR_QUALITY": "0",
-            "VIBE_MODE": "2",
-            "VIBE_INTENSITY": "0.75",
-            "ATMOSPHERE_DENSITY": "0.68",
-            "BLOOM_STRENGTH": "0.25",
-            "TERRAIN_COHESION_STRENGTH": "0.50",
-            "MATERIAL_DETAIL_STRENGTH": "0.30",
-            "VOXEL_ROUNDNESS": "0.20",
-            "VISION_FOCUS_DISTANCE": "80.0",
-            "DISTANT_BLUR_STRENGTH": "0.32",
-            "ASTIGMATISM_STRENGTH": "0.12",
-            "SURVIVAL_EFFECT_STRENGTH": "0.62",
-        },
-        "off": {
-            "SSAO_ENABLED",
-            "VOLUMETRIC_LIGHTING",
-            "TAA_ENABLED",
-            "AURORA_ENABLED",
-            "EMISSIVE_ORES",
-            "MATERIAL_DETAIL",
-            "ROUNDED_VOXEL_LIGHTING",
-        },
-        "on": {
-            "FXAA_ENABLED",
-            "BLOOM_ENABLED",
-            "RAIN_EFFECTS",
-            "WAVING_FOLIAGE",
-            "WAVING_WATER",
-        },
-    },
-    "MEDIUM": {
-        "numbers": {
-            "SHADOW_QUALITY": "2",
-            "SHADOW_DISTANCE": "128.0",
-            "CLOUD_QUALITY": "1",
-            "WATER_QUALITY": "2",
-            "SSR_QUALITY": "1",
-            "VIBE_MODE": "2",
-            "VIBE_INTENSITY": "0.90",
-            "ATMOSPHERE_DENSITY": "0.68",
-            "BLOOM_STRENGTH": "0.40",
-            "TERRAIN_COHESION_STRENGTH": "0.65",
-            "MATERIAL_DETAIL_STRENGTH": "0.45",
-            "VOXEL_ROUNDNESS": "0.30",
-            "VISION_FOCUS_DISTANCE": "72.0",
-            "DISTANT_BLUR_STRENGTH": "0.42",
-            "ASTIGMATISM_STRENGTH": "0.17",
-            "SURVIVAL_EFFECT_STRENGTH": "0.68",
-        },
-        "off": {"TAA_ENABLED", "EMISSIVE_ORES"},
-        "on": {
-            "SSAO_ENABLED",
-            "VOLUMETRIC_LIGHTING",
-            "FXAA_ENABLED",
-            "BLOOM_ENABLED",
-            "AURORA_ENABLED",
-            "RAIN_EFFECTS",
-            "WAVING_FOLIAGE",
-            "WAVING_WATER",
-            "MATERIAL_DETAIL",
-            "ROUNDED_VOXEL_LIGHTING",
-        },
-    },
-    "HIGH": {
-        "numbers": {
-            "SHADOW_QUALITY": "2",
-            "SHADOW_DISTANCE": "160.0",
-            "CLOUD_QUALITY": "2",
-            "WATER_QUALITY": "2",
-            "SSR_QUALITY": "2",
-            "VIBE_MODE": "2",
-            "VIBE_INTENSITY": "1.10",
-            "ATMOSPHERE_DENSITY": "0.82",
-            "BLOOM_STRENGTH": "0.40",
-            "TERRAIN_COHESION_STRENGTH": "0.78",
-            "MATERIAL_DETAIL_STRENGTH": "0.70",
-            "VOXEL_ROUNDNESS": "0.40",
-            "VISION_FOCUS_DISTANCE": "64.0",
-            "DISTANT_BLUR_STRENGTH": "0.52",
-            "ASTIGMATISM_STRENGTH": "0.22",
-            "SURVIVAL_EFFECT_STRENGTH": "0.72",
-        },
-        "off": {"TAA_ENABLED", "EMISSIVE_ORES"},
-        "on": {
-            "SSAO_ENABLED",
-            "VOLUMETRIC_LIGHTING",
-            "FXAA_ENABLED",
-            "BLOOM_ENABLED",
-            "AURORA_ENABLED",
-            "RAIN_EFFECTS",
-            "WAVING_FOLIAGE",
-            "WAVING_WATER",
-            "MATERIAL_DETAIL",
-            "ROUNDED_VOXEL_LIGHTING",
-        },
-        "feature_defines": {"IRIS_FEATURE_BLOCK_EMISSION_ATTRIBUTE"},
-    },
-    "CINEMATIC": {
-        "numbers": {
-            "SHADOW_QUALITY": "3",
-            "SHADOW_DISTANCE": "224.0",
-            "CLOUD_QUALITY": "3",
-            "WATER_QUALITY": "3",
-            "SSR_QUALITY": "3",
-            "VIBE_MODE": "2",
-            "VIBE_INTENSITY": "1.30",
-            "ATMOSPHERE_DENSITY": "1.00",
-            "BLOOM_STRENGTH": "0.55",
-            "TERRAIN_COHESION_STRENGTH": "0.90",
-            "MATERIAL_DETAIL_STRENGTH": "0.85",
-            "VOXEL_ROUNDNESS": "0.55",
-            "VISION_FOCUS_DISTANCE": "56.0",
-            "DISTANT_BLUR_STRENGTH": "0.62",
-            "ASTIGMATISM_STRENGTH": "0.28",
-            "SURVIVAL_EFFECT_STRENGTH": "0.78",
-            "MOTION_STABILITY": "0.62",
-        },
-        "off": {"FXAA_ENABLED", "EMISSIVE_ORES"},
-        "on": {
-            "SSAO_ENABLED",
-            "VOLUMETRIC_LIGHTING",
-            "TAA_ENABLED",
-            "BLOOM_ENABLED",
-            "AURORA_ENABLED",
-            "RAIN_EFFECTS",
-            "WAVING_FOLIAGE",
-            "WAVING_WATER",
-            "MATERIAL_DETAIL",
-            "ROUNDED_VOXEL_LIGHTING",
-        },
-        "feature_defines": {"IRIS_FEATURE_BLOCK_EMISSION_ATTRIBUTE"},
-    },
-}
+def parse_settings(text: str) -> dict[str, set[str] | None]:
+    """Return numeric option domains and boolean options; reject invalid defaults."""
+    options = {}
+    pattern = re.compile(r"^(?://)?#define\s+(\w+)(?:\s+([^/\s]+))?(?:\s*//\s*\[([^]]+)\])?\s*$")
+    for line in text.splitlines():
+        match = pattern.match(line.strip())
+        if not match:
+            continue
+        key, default, domain = match.groups()
+        if key.startswith("VIBE_SHADER_"):
+            continue
+        values = set(domain.split()) if domain else None
+        if default is not None and (values is None or default not in values):
+            raise ValueError(f"{key}: default {default!r} outside declared domain")
+        if key in options:
+            raise ValueError(f"duplicate setting {key}")
+        options[key] = values
+    return options
 
-for profile in PROFILES.values():
-    profile["on"].update(
-        {
-            "DISTANT_BLUR",
-            "OCULAR_ASTIGMATISM",
-            "SURVIVAL_VISION",
-            "NATURAL_TERRAIN_COHESION",
-        }
-    )
+
+def parse_profiles(properties: str, settings: str) -> dict[str, dict]:
+    """Compile precisely the options in the shipped UI, not a second hand copy."""
+    options = parse_settings(settings)
+    profiles = {}
+    for name, body in re.findall(r"(?m)^profile\.(\w+)\s*=\s*(.+)$", properties):
+        if name in profiles:
+            raise ValueError(f"duplicate profile {name}")
+        profile = {"numbers": {}, "on": set(), "off": set()}
+        seen = set()
+        for token in body.split():
+            key = token.split("=", 1)[0].lstrip("!")
+            if key not in options or key in seen:
+                raise ValueError(f"{name}: unknown or duplicate option {key}")
+            seen.add(key)
+            if "=" in token:
+                value = token.split("=", 1)[1]
+                if options[key] is None or value not in options[key] or token.startswith("!"):
+                    raise ValueError(f"{name}: invalid value {token}")
+                profile["numbers"][key] = value
+            else:
+                if options[key] is not None:
+                    raise ValueError(f"{name}: numeric option {key} needs a value")
+                profile["off" if token.startswith("!") else "on"].add(key)
+        profiles[name] = profile
+    if not profiles:
+        raise ValueError("no quality profiles found")
+    return profiles
+
+
+PROFILES = parse_profiles(
+    (SHADERS / "shaders.properties").read_text(encoding="utf-8"),
+    (SHADERS / "lib/settings.glsl").read_text(encoding="utf-8"),
+)
+# Exercise the native emission attribute and its compatibility fallback.
+for name in ("HIGH", "CINEMATIC"):
+    if name in PROFILES:
+        PROFILES[name]["feature_defines"] = {"IRIS_FEATURE_BLOCK_EMISSION_ATTRIBUTE"}
 
 REPRESENTATIVE = {
     "world0": (
@@ -202,52 +109,26 @@ def apply_profile(source: str, profile: dict) -> str:
     return source
 
 
-def profile_contract_errors() -> list[str]:
-    properties = (SHADERS / "shaders.properties").read_text(encoding="utf-8")
-    errors: list[str] = []
-    for name, profile in PROFILES.items():
-        match = re.search(rf"(?m)^profile\.{name}\s*=\s*(.+)$", properties)
-        if match is None:
-            errors.append(f"missing profile.{name} in shaders.properties")
-            continue
-        tokens = match.group(1).split()
-        numbers = {
-            key: value
-            for token in tokens
-            if "=" in token
-            for key, value in (token.split("=", 1),)
-        }
-        enabled = {
-            token for token in tokens if "=" not in token and not token.startswith("!")
-        }
-        disabled = {token[1:] for token in tokens if token.startswith("!")}
-        for key, expected in profile["numbers"].items():
-            if numbers.get(key) != expected:
-                errors.append(
-                    f"profile.{name} {key}: expected {expected}, got {numbers.get(key)!r}"
-                )
-        for key in profile["on"]:
-            if key not in enabled:
-                errors.append(f"profile.{name} must enable {key}")
-        for key in profile["off"]:
-            if key not in disabled:
-                errors.append(f"profile.{name} must disable {key}")
-    return errors
-
-
 def main() -> int:
-    contract_errors = profile_contract_errors()
-    if contract_errors:
-        for error in contract_errors:
-            print(f"FAIL profile contract: {error}", file=sys.stderr)
-        return 1
+    if set(PROFILES) != {"LOW", "MEDIUM", "HIGH", "CINEMATIC"}:
+        raise ValueError("expected LOW, MEDIUM, HIGH and CINEMATIC profiles")
     print("PASS shaders.properties profile contract")
 
     validator = GLValidator()
     failures: list[str] = []
     total = 0
-    for profile_name, profile in PROFILES.items():
-        for dim, programs in REPRESENTATIVE.items():
+    cases = [(name, profile, REPRESENTATIVE) for name, profile in PROFILES.items()]
+    post_programs = {dim: ("deferred", "composite", "final") for dim in REPRESENTATIVE}
+    variants = {
+        "OFF": {"CELESTIAL_QUALITY": "0", "TIDAL_GLOW": "0.00", "WATER_QUALITY": "0"},
+        "STILL": {"PHENOMENA_SPEED": "0.00"},
+        **{f"LEGACY_{mode}": {"VIBE_MODE": str(mode)} for mode in range(4)},
+    }
+    for name, numbers in variants.items():
+        profile = {**PROFILES["HIGH"], "numbers": {**PROFILES["HIGH"]["numbers"], **numbers}}
+        cases.append((name, profile, post_programs))
+    for profile_name, profile, representatives in cases:
+        for dim, programs in representatives.items():
             for program in programs:
                 vsh = SHADERS / dim / f"{program}.vsh"
                 fsh = SHADERS / dim / f"{program}.fsh"

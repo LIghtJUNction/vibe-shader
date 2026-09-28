@@ -182,7 +182,7 @@ if "fbm3(" in cloud_text:
 composite_text = (SHADERS / "program/composite/base.glsl").read_text(encoding="utf-8")
 if "#define VOLUME_STEPS 6" not in composite_text:
     fail("High volumetric-light integration must remain at six steps")
-sky_text = (SHADERS / "lib/sky.glsl").read_text(encoding="utf-8")
+sky_text = resolve_includes(SHADERS / "lib/sky.glsl")
 if "atan(" in sky_text:
     fail("sky effects must not use discontinuous azimuth longitude")
 lighting_text = (SHADERS / "program/deferred/lighting.glsl").read_text(encoding="utf-8")

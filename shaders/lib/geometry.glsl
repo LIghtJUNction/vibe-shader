@@ -13,12 +13,14 @@ float waterHeight(vec2 xz, float time) {
 }
 
 vec3 waterNormalFromWorld(vec2 xz, float time) {
-    const float e = 0.12;
-    float hL = waterHeight(xz - vec2(e, 0.0), time);
-    float hR = waterHeight(xz + vec2(e, 0.0), time);
-    float hD = waterHeight(xz - vec2(0.0, e), time);
-    float hU = waterHeight(xz + vec2(0.0, e), time);
-    return normalize(vec3(hL - hR, 2.0 * e, hD - hU));
+    // Exact derivative of waterHeight: no four displaced height evaluations.
+    vec2 slope = vec2(0.91, 0.37) * 0.016 *
+        cos(dot(xz, vec2(0.91, 0.37)) + time * 1.22);
+    slope += vec2(-0.47, 1.13) * 0.010 *
+        cos(dot(xz, vec2(-0.47, 1.13)) + time * 0.96 + 1.8);
+    slope += vec2(2.71, -1.83) * 0.004 *
+        cos(dot(xz, vec2(2.71, -1.83)) - time * 1.58 + 0.7);
+    return normalize(vec3(-slope.x, 1.0, -slope.y));
 }
 
 vec3 applyVoxelAnimation(vec3 worldPos, float blockId, vec2 atlasUv,

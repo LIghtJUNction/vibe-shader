@@ -18,8 +18,10 @@ vec3 vibeAccentA() {
     return vec3(1.10, 0.34, 0.075);
 #elif VIBE_MODE == 2
     return vec3(0.035, 0.88, 1.35);
-#else
+#elif VIBE_MODE == 3
     return vec3(0.08, 0.95, 1.65);
+#else
+    return vec3(0.18, 0.38, 0.43);
 #endif
 }
 
@@ -30,8 +32,10 @@ vec3 vibeAccentB() {
     return vec3(1.35, 0.78, 0.24);
 #elif VIBE_MODE == 2
     return vec3(1.15, 0.055, 0.82);
-#else
+#elif VIBE_MODE == 3
     return vec3(1.55, 0.19, 0.045);
+#else
+    return vec3(0.80, 0.48, 0.23);
 #endif
 }
 
@@ -47,9 +51,12 @@ vec3 vibeSunColor(float sunHeight, float rain) {
 #elif VIBE_MODE == 2
     vec3 horizon = vec3(1.42, 0.20, 0.18);
     vec3 noon = vec3(1.02, 0.86, 0.67);
-#else
+#elif VIBE_MODE == 3
     vec3 horizon = vec3(1.70, 0.16, 0.025);
     vec3 noon = vec3(1.02, 0.75, 0.48);
+#else
+    vec3 horizon = vec3(1.20, 0.56, 0.24);
+    vec3 noon = vec3(1.03, 0.95, 0.82);
 #endif
     vec3 color = mix(horizon, noon, smoothstep(0.015, 0.42, sunHeight));
     color = mix(color, vec3(0.62, 0.72, 0.84), rain * 0.70);
@@ -68,9 +75,12 @@ vec3 vibeSkyZenith(float sunHeight, float rain) {
 #elif VIBE_MODE == 2
     vec3 dayColor = vec3(0.045, 0.245, 0.570);
     vec3 nightColor = vec3(0.006, 0.004, 0.035);
-#else
+#elif VIBE_MODE == 3
     vec3 dayColor = vec3(0.025, 0.155, 0.390);
     vec3 nightColor = vec3(0.002, 0.004, 0.024);
+#else
+    vec3 dayColor = vec3(0.080, 0.220, 0.360);
+    vec3 nightColor = vec3(0.003, 0.009, 0.019);
 #endif
     vec3 color = mix(nightColor, dayColor, day);
     color += vibeAccentB() * twilight * 0.034 * TWILIGHT_BOOST;
@@ -89,9 +99,12 @@ vec3 vibeSkyHorizon(float sunHeight, float rain) {
 #elif VIBE_MODE == 2
     vec3 dayColor = vec3(0.38, 0.67, 0.88);
     vec3 nightColor = vec3(0.028, 0.025, 0.105);
-#else
+#elif VIBE_MODE == 3
     vec3 dayColor = vec3(0.24, 0.47, 0.72);
     vec3 nightColor = vec3(0.012, 0.024, 0.072);
+#else
+    vec3 dayColor = vec3(0.54, 0.64, 0.70);
+    vec3 nightColor = vec3(0.021, 0.037, 0.051);
 #endif
     vec3 color = mix(nightColor, dayColor, day);
     color += mix(vibeAccentA(), vibeAccentB(), 0.62) * twilight *
@@ -108,8 +121,10 @@ vec3 vibeAmbientUp(float sunHeight, float rain) {
     vec3 daylight = vec3(0.27, 0.35, 0.44);
 #elif VIBE_MODE == 2
     vec3 daylight = vec3(0.25, 0.38, 0.55);
-#else
+#elif VIBE_MODE == 3
     vec3 daylight = vec3(0.18, 0.30, 0.48);
+#else
+    vec3 daylight = vec3(0.29, 0.37, 0.43);
 #endif
     vec3 moonlight = mix(vec3(0.035, 0.050, 0.105),
                          vibeAccentA() * 0.055, 0.45);
@@ -127,8 +142,10 @@ vec3 vibeAmbientDown(float sunHeight, float rain) {
     vec3 daylight = vec3(0.080, 0.074, 0.066);
 #elif VIBE_MODE == 2
     vec3 daylight = vec3(0.060, 0.075, 0.105);
-#else
+#elif VIBE_MODE == 3
     vec3 daylight = vec3(0.040, 0.058, 0.095);
+#else
+    vec3 daylight = vec3(0.077, 0.085, 0.090);
 #endif
     vec3 nightColor = vec3(0.010, 0.014, 0.035);
     return mix(mix(nightColor, daylight, day),
@@ -168,11 +185,16 @@ vec3 applyVibePostGrade(vec3 color, float sunHeight, float rain) {
     vec3 highlightTint = vec3(0.020, 0.004, 0.006);
     float saturation = 1.16;
     float contrast = 1.04;
-#else
+#elif VIBE_MODE == 3
     vec3 shadowTint = vec3(-0.010, 0.007, 0.028);
     vec3 highlightTint = vec3(0.030, 0.004, -0.012);
     float saturation = 1.15;
     float contrast = 1.06;
+#else
+    vec3 shadowTint = vec3(-0.004, 0.003, 0.006);
+    vec3 highlightTint = vec3(0.012, 0.006, -0.003);
+    float saturation = 1.04;
+    float contrast = 1.02;
 #endif
 
     float shadowWeight = 1.0 - smoothstep(0.04, 0.58, y);
