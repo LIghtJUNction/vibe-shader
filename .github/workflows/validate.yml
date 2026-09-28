@@ -16,6 +16,9 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
     env:
       LIBGL_ALWAYS_SOFTWARE: '1'
       EGL_PLATFORM: surfaceless
@@ -38,13 +41,15 @@ jobs:
       - name: Audit pack and compile Python tools
         run: |
           python -m compileall -q tools
-          python tools/audit_pack.py
+          python tools/audit_pack.py | tee dist/audit.log
       - name: Compile and link default programs
-        run: python tools/validate_glsl.py
+        run: python tools/validate_glsl.py | tee dist/compile.log
       - name: Compile and link quality profiles
-        run: python tools/validate_profiles.py
+        run: python tools/validate_profiles.py | tee dist/profiles.log
       - name: Run regression tests
-        run: python -m unittest discover -s tools -p 'test_*.py'
+        run: python -m unittest discover -s tools -p 'test_*.py' -v 2>&1 | tee dist/tests.log
+      - name: Render offline GLSL studies
+        run: python tools/render_preview.py --width 960 --height 600
       - name: Build installable review pack
         run: |
           zip -q -9 -r dist/vibe-shader-review.zip shaders pack.png LICENSE

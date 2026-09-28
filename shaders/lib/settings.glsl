@@ -9,10 +9,16 @@
 #define SSR_QUALITY 2 // [0 1 2 3]
 
 // Visual identity
-#define VIBE_MODE 2 // [0 1 2 3]
+#define VIBE_MODE 4 // [0 1 2 3 4]
 #define VIBE_INTENSITY 1.10 // [0.00 0.35 0.55 0.75 0.90 1.10 1.30]
 #define ATMOSPHERE_DENSITY 0.82 // [0.30 0.45 0.55 0.68 0.82 1.00 1.20]
 #define TWILIGHT_BOOST 1.15 // [0.00 0.35 0.60 0.90 1.15 1.40]
+
+// Meridian: world-anchored phenomena (no extra render passes)
+#define CELESTIAL_QUALITY 2 // [0 1 2]
+#define CELESTIAL_STRENGTH 0.85 // [0.00 0.35 0.60 0.85 1.00 1.25]
+#define TIDAL_GLOW 0.65 // [0.00 0.35 0.65 1.00]
+#define PHENOMENA_SPEED 0.35 // [0.00 0.20 0.35 0.65 1.00]
 
 // Features
 #define SSAO_ENABLED
@@ -33,10 +39,10 @@
 #define RAIN_EFFECTS
 
 // Human vision controls
-#define VISION_FOCUS_DISTANCE 64.0 // [32.0 48.0 64.0 80.0 96.0 128.0]
+#define VISION_FOCUS_DISTANCE 64.0 // [32.0 48.0 56.0 64.0 72.0 80.0 96.0 128.0]
 #define DISTANT_BLUR_STRENGTH 0.52 // [0.00 0.20 0.32 0.42 0.52 0.62 0.75]
 #define ASTIGMATISM_STRENGTH 0.22 // [0.00 0.08 0.12 0.17 0.22 0.28 0.36]
-#define SURVIVAL_EFFECT_STRENGTH 0.72 // [0.00 0.35 0.50 0.62 0.72 0.82 1.00]
+#define SURVIVAL_EFFECT_STRENGTH 0.72 // [0.00 0.35 0.50 0.62 0.68 0.72 0.78 0.82 1.00]
 #define TERRAIN_COHESION_STRENGTH 0.78 // [0.00 0.35 0.50 0.65 0.78 0.90 1.00]
 #define MATERIAL_DETAIL_STRENGTH 0.70 // [0.00 0.30 0.45 0.55 0.70 0.85 1.00]
 #define VOXEL_ROUNDNESS 0.40 // [0.00 0.20 0.30 0.40 0.55 0.70]

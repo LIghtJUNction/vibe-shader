@@ -53,7 +53,7 @@ option.MOTION_STABILITY=TAA 历史权重
 
 value.VIBE_MODE.0=自然
 value.VIBE_MODE.1=金色时刻
-value.VIBE_MODE.2=梦波（默认）
+value.VIBE_MODE.2=梦波
 value.VIBE_MODE.3=夜间驾驶
 value.SHADOW_QUALITY.0=关闭
 value.SHADOW_QUALITY.1=柔和 4 采样
@@ -72,3 +72,17 @@ value.SSR_QUALITY.1=8 步
 value.SSR_QUALITY.2=16 步
 value.SSR_QUALITY.3=26 步
 suffix.SHADOW_DISTANCE= 方块
+
+screen.PHENOMENA=天穹折光
+option.CELESTIAL_QUALITY=天象细节
+option.CELESTIAL_STRENGTH=天象强度
+option.TIDAL_GLOW=夜海微光
+option.PHENOMENA_SPEED=天象流速
+value.CELESTIAL_QUALITY.0=关闭
+value.CELESTIAL_QUALITY.1=丝带
+value.CELESTIAL_QUALITY.2=观测站
+option.PHENOMENA_SPEED.comment=设为零可冻结新天象与夜海微光；不影响原有水波、云与昼夜。
+option.CELESTIAL_QUALITY.comment=世界方向固定的薄光带和末地观测站。无额外渲染缓冲。
+option.TIDAL_GLOW.comment=仅夜间近处水平水面出现零星发光纹理，不会染亮整片海。
+
+value.VIBE_MODE.4=天穹折光（默认）

@@ -35,12 +35,10 @@ void main() {
         float distanceToCamera = length(viewPosition);
 #ifdef DIM_NETHER
         float fogAmount = 1.0 - exp(-distanceToCamera * 0.024);
-        vec3 fogColor = renderDimensionSky(rdWorld,
-                                           sunDirWorld, moonDirWorld);
+        vec3 fogColor = renderDimensionFog(rdWorld, sunDirWorld);
 #elif defined DIM_END
         float fogAmount = 1.0 - exp(-distanceToCamera * 0.0058);
-        vec3 fogColor = renderDimensionSky(rdWorld,
-                                           sunDirWorld, moonDirWorld);
+        vec3 fogColor = renderDimensionFog(rdWorld, sunDirWorld);
 #else
         float normalizedDistance = distanceToCamera / max(far, 1.0);
         float clearDensity = 0.68 + rainStrength * 1.58;
