@@ -16,11 +16,11 @@ from validate_glsl import (
 
 
 def numeric_re(key: str) -> re.Pattern[str]:
-    return re.compile(rf"(?m)^#define\s+{re.escape(key)}\s+[^\n]+$")
+    return re.compile(rf"(?m)^#define[ \t]+{re.escape(key)}[ \t]+[^\n]+$")
 
 
 def boolean_re(key: str) -> re.Pattern[str]:
-    return re.compile(rf"(?m)^(?://)?#define\s+{re.escape(key)}(?:\s.*)?$")
+    return re.compile(rf"(?m)^(?://)?#define[ \t]+{re.escape(key)}(?:[ \t]+[^\n]*)?$")
 
 
 def parse_settings(text: str) -> dict[str, set[str] | None]:

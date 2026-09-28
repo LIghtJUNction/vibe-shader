@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+import re
 import unittest
 
 from render_preview import GLProbe
@@ -55,10 +56,18 @@ class ProfileTests(unittest.TestCase):
                 parse_profiles(text, self.settings)
 
     def test_profile_replaces_numeric_and_boolean_defines(self):
-        result = apply_profile(self.settings, PROFILES['LOW'])
-        self.assertIn('#define CELESTIAL_QUALITY 1\n', result)
-        self.assertIn('#define TIDAL_GLOW 0.00\n', result)
-        self.assertIn('//#define TAA_ENABLED\n', result)
+        pattern = r"(?m)^(?://)?#define[ \t]+(\w+)"
+        expected_keys = set(re.findall(pattern, self.settings))
+        for profile in PROFILES.values():
+            result = apply_profile(self.settings, profile)
+            actual_keys = set(re.findall(pattern, result)) - profile.get('feature_defines', set())
+            self.assertEqual(actual_keys, expected_keys)
+            for key in profile['on']:
+                self.assertRegex(result, rf"(?m)^#define {key}$")
+            for key in profile['off']:
+                self.assertRegex(result, rf"(?m)^//#define {key}$")
+            for key, value in profile['numbers'].items():
+                self.assertIn(f'#define {key} {value}\n', result)
 
     def test_fog_does_not_use_object_sky(self):
         source = (SHADERS / 'program/deferred/main.glsl').read_text()
