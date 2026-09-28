@@ -1,0 +1,59 @@
+name: Validate shaders
+
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shader-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      EGL_PLATFORM: surfaceless
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Capture reproducible source
+        run: |
+          mkdir -p dist
+          git archive --format=zip --output=dist/source.zip HEAD
+      - name: Install validation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes libegl1 libegl-mesa0 libgl1 libgl1-mesa-dri
+          python -m pip install --disable-pip-version-check Pillow
+      - name: Audit pack and compile Python tools
+        run: |
+          python -m compileall -q tools
+          python tools/audit_pack.py
+      - name: Compile and link default programs
+        run: python tools/validate_glsl.py
+      - name: Compile and link quality profiles
+        run: python tools/validate_profiles.py
+      - name: Run regression tests
+        run: python -m unittest discover -s tools -p 'test_*.py'
+      - name: Build installable review pack
+        run: |
+          zip -q -9 -r dist/vibe-shader-review.zip shaders pack.png LICENSE
+          (cd dist && sha256sum vibe-shader-review.zip > vibe-shader-review.zip.sha256)
+      - name: Upload review artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: shader-review-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
